@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Giáo viên{% endblock %}
+{% block content %}
+
+<div class="top">
+    <div>
+        <h2>Bảng điều khiển giáo viên</h2>
+        <p class="muted">
+            Upload đề → hệ thống tự phân tích → giáo viên kiểm tra → Xuất bản.
+        </p>
+    </div>
+    <a class="btn" href="{{ url_for('upload_exam') }}">+ Tải đề</a>
+</div>
+
+<div class="card">
+    <div class="top" style="margin-bottom:10px">
+        <div><h3 style="margin:0">Danh sách học sinh</h3><p class="muted" style="margin:.35rem 0 0">Giữ nguyên cơ chế chấp nhận/tham gia lớp và xóa học sinh như các phiên bản trước.</p></div>
+        <a class="btn secondary" href="{{ url_for('teacher_my_students') }}">Quản lý học sinh / Link chấp nhận</a>
+    </div>
+<form method="post"
+          action="{{ url_for('roster_upload') }}"
+          enctype="multipart/form-data">
+        <input type="file" name="roster" accept=".xls,.xlsx" required>
+        <button class="btn">Cập nhật danh sách Excel</button>
+
+        {% if roster_exists %}
+        <a class="btn secondary"
+           href="{{ url_for('roster_download') }}">
+            Tải Excel đã cập nhật
+        </a>
+        {% endif %}
+    </form>
+    {% if initial_accounts_exists %}<p><a class="btn secondary" href="{{ url_for('roster_initial_accounts') }}">Tải tài khoản/mật khẩu tạm học sinh mới</a></p>
+    <form method="post" action="{{ url_for('roster_initial_accounts_delete') }}"><button class="btn secondary">Xóa file mật khẩu tạm sau khi đã phát</button></form>{% endif %}
+    <p class="muted">
+        Danh sách Excel được lưu riêng cho từng giáo viên. Học sinh có tài khoản từ trước cần chấp nhận liên kết mời trước khi tham gia lớp mới.
+    </p>
+</div>
+
+<div class="grid">
+{% for e in exams %}
+    <div class="card">
+        <h3>{{ e.title }}</h3>
+
+        <p>{{ e.question_count }} câu · 4 phần · 10 điểm</p>
+
+        <p>
+            Điểm:
+            I {{ e.part1_points }} ·
+            II {{ e.part2_points }}
+            (PA {{ e.part2_scoring_mode or 1 }} — chấm từng câu) ·
+            III {{ e.part3_points }} ·
+            IV {{ e.part4_points }}
+        </p>
+
+        <p>
+            {% if e.published %}
+                <span class="status-published">Đã xuất bản</span>
+            {% else %}
+                <span class="status-draft">Bản nháp</span>
+            {% endif %}
+        </p>
+
+        <a class="btn secondary"
+           href="{{ url_for('edit_exam', exam_id=e.id) }}">
+            Xem đề
+        </a>
+
+        {% if e.published %}
+        <form method="post" action="{{ url_for('create_exam_invite',exam_id=e.id) }}" style="display:inline"><button class="btn">Tạo link đề kiểm tra</button></form>
+        {% for token in exam_links.get(e.id,[]) %}
+        <div><input title="Liên kết đề kiểm tra" readonly onclick="this.select()" style="width:min(100%,480px)" value="{{ url_for('join_exam',token=token,_external=True) }}">
+        <form method="post" action="{{ url_for('revoke_exam_invite',exam_id=e.id,token=token) }}" style="display:inline"><button class="btn secondary">Vô hiệu link</button></form></div>
+        {% endfor %}
+        <a class="btn secondary"
+           href="{{ url_for('grade_exam', exam_id=e.id) }}">
+            Chấm Phần IV
+        </a>
+
+        <a class="btn secondary"
+           href="{{ url_for('exam_results', exam_id=e.id) }}">
+            Xem kết quả & Excel
+        </a>
+        {% endif %}
+
+        {% if not e.published %}
+        <form method="post"
+              action="{{ url_for('publish_exam', exam_id=e.id) }}"
+              style="display:inline">
+            <button class="btn success">Xuất bản</button>
+        </form>
+        {% endif %}
+
+        <!-- =================================================
+             V5.12.5 — XÓA ĐỀ: CHỈ CÓ Ở GIAO DIỆN GIÁO VIÊN
+             ================================================= -->
+        <form method="post"
+              action="{{ url_for('delete_exam', exam_id=e.id) }}"
+              style="display:inline"
+              onsubmit="return confirm(
+                  'Bạn có chắc muốn xóa đề này? ' +
+                  'Sau khi xóa, học sinh sẽ không còn nhìn thấy hoặc làm đề này.'
+              );">
+            <button type="submit" class="btn btn-danger">
+                Xóa đề
+            </button>
+        </form>
+    </div>
+{% else %}
+    <div class="empty">Chưa có đề.</div>
+{% endfor %}
+</div>
+
+{% endblock %}

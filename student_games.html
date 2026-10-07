@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}Trò chơi trí tuệ{% endblock %}
+{% block content %}
+<div class="utility-shell games-shell">
+    <div class="utility-heading">
+        <div class="utility-heading-icon"><i class="bi bi-controller"></i></div>
+        <div>
+            <h1>Trò chơi trí tuệ</h1>
+            <p>Luyện Toán, trí nhớ, phản xạ và kiến thức phổ thông.</p>
+        </div>
+    </div>
+
+    <div class="game-picker" role="tablist" aria-label="Chọn trò chơi">
+        <button class="game-picker-card active" data-game="quick" type="button">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <strong>Thử thách Toán</strong><small>Phản xạ trong 60 giây</small>
+        </button>
+        <button class="game-picker-card" data-game="rainbow" type="button">
+            <i class="bi bi-rainbow"></i>
+            <strong>Bảy sắc cầu vồng</strong><small>Ghi nhớ chuỗi màu</small>
+        </button>
+        <button class="game-picker-card" data-game="peak" type="button">
+            <i class="bi bi-trophy-fill"></i>
+            <strong>Đỉnh tri thức</strong><small>Chinh phục câu hỏi</small>
+        </button>
+    </div>
+
+    <section class="game-panel" data-panel="quick">
+        <div class="math-game-board">
+            <div class="game-main">
+                <div class="game-controls">
+                    <div>
+                        <label for="gameLevel">Mức độ</label>
+                        <select id="gameLevel">
+                            <option value="basic">Cơ bản — cộng và trừ</option>
+                            <option value="medium">Trung bình — nhân và chia</option>
+                            <option value="highschool">THPT — phương trình bậc nhất</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="startGame" type="button">
+                        <i class="bi bi-play-fill"></i> Bắt đầu
+                    </button>
+                </div>
+                <div class="game-question" id="gameQuestion" aria-live="polite">
+                    Chọn mức độ và bấm Bắt đầu
+                </div>
+                <div class="game-answer-row">
+                    <input id="gameAnswer" type="number" inputmode="numeric"
+                           placeholder="Nhập đáp án" disabled>
+                    <button class="btn success" id="checkAnswer" type="button" disabled>Trả lời</button>
+                </div>
+                <p class="game-feedback" id="gameFeedback" aria-live="polite"></p>
+            </div>
+            <aside class="game-scoreboard" aria-label="Kết quả trò chơi Toán">
+                <h3>Kết quả</h3>
+                <div class="game-stat"><span>Thời gian</span><strong id="gameTime">60</strong></div>
+                <div class="game-stat"><span>Điểm</span><strong id="gameScore">0</strong></div>
+                <div class="game-stat"><span>Đúng</span><strong id="gameCorrect">0</strong></div>
+                <div class="game-stat"><span>Đã trả lời</span><strong id="gameTotal">0</strong></div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="game-panel" data-panel="rainbow" hidden>
+        <div class="rainbow-game utility-card">
+            <div class="game-section-head">
+                <div><h2>Bảy sắc cầu vồng</h2><p>Quan sát rồi bấm lại đúng thứ tự các màu phát sáng.</p></div>
+                <button class="btn" id="rainbowStart" type="button"><i class="bi bi-play-fill"></i> Bắt đầu</button>
+            </div>
+            <div class="rainbow-status" id="rainbowStatus" aria-live="polite">Chuỗi đầu tiên có 2 màu.</div>
+            <div class="rainbow-board" id="rainbowBoard">
+                <button data-color="0" style="--rainbow:#e53935" aria-label="Đỏ"></button>
+                <button data-color="1" style="--rainbow:#fb8c00" aria-label="Cam"></button>
+                <button data-color="2" style="--rainbow:#fdd835" aria-label="Vàng"></button>
+                <button data-color="3" style="--rainbow:#43a047" aria-label="Xanh lá"></button>
+                <button data-color="4" style="--rainbow:#1e88e5" aria-label="Xanh dương"></button>
+                <button data-color="5" style="--rainbow:#3949ab" aria-label="Chàm"></button>
+                <button data-color="6" style="--rainbow:#8e24aa" aria-label="Tím"></button>
+            </div>
+            <div class="rainbow-metrics">
+                <span>Cấp độ <strong id="rainbowLevel">0</strong></span>
+                <span>Điểm <strong id="rainbowScore">0</strong></span>
+                <span>Kỷ lục <strong id="rainbowBest">0</strong></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="game-panel" data-panel="peak" hidden>
+        <div class="peak-game utility-card">
+            <div class="game-section-head">
+                <div>
+                    <h2>Chinh phục đỉnh tri thức</h2>
+                    <p>Bốn chặng câu hỏi nguyên bản: Khởi động, Khám phá, Tăng tốc và Về đích.</p>
+                </div>
+                <button class="btn" id="peakStart" type="button"><i class="bi bi-flag-fill"></i> Vào cuộc</button>
+            </div>
+            <div class="peak-route" aria-label="Các chặng">
+                <span>Khởi động</span><span>Khám phá</span><span>Tăng tốc</span><span>Về đích</span>
+            </div>
+            <div class="peak-meta">
+                <strong id="peakRound">Sẵn sàng</strong>
+                <span>Câu <b id="peakNumber">0</b>/12</span>
+                <span>Điểm <b id="peakScore">0</b></span>
+            </div>
+            <div class="peak-question" id="peakQuestion">Bấm “Vào cuộc” để bắt đầu.</div>
+            <div class="peak-options" id="peakOptions"></div>
+            <p class="game-feedback" id="peakFeedback" aria-live="polite"></p>
+            <button class="btn secondary peak-next" id="peakNext" type="button" hidden>Câu tiếp theo</button>
+        </div>
+    </section>
+</div>
+
+<script>
+(function(){
+    const pickerButtons=[...document.querySelectorAll('.game-picker-card')];
+    const panels=[...document.querySelectorAll('.game-panel')];
+    pickerButtons.forEach(button=>button.addEventListener('click',()=>{
+        pickerButtons.forEach(item=>item.classList.toggle('active',item===button));
+        panels.forEach(panel=>{panel.hidden=panel.dataset.panel!==button.dataset.game;});
+    }));
+
+    const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+
+    // Trò chơi 1: phản xạ Toán học.
+    const level=document.getElementById('gameLevel');
+    const start=document.getElementById('startGame');
+    const question=document.getElementById('gameQuestion');
+    const answer=document.getElementById('gameAnswer');
+    const check=document.getElementById('checkAnswer');
+    const feedback=document.getElementById('gameFeedback');
+    const timeEl=document.getElementById('gameTime');
+    const scoreEl=document.getElementById('gameScore');
+    const correctEl=document.getElementById('gameCorrect');
+    const totalEl=document.getElementById('gameTotal');
+    let expected=0,seconds=60,score=0,correct=0,total=0,timer=null,running=false;
+
+    function nextMath(){
+        const mode=level.value;
+        if(mode==='basic'){
+            const a=rand(5,80),b=rand(1,50),plus=Math.random()>.45;
+            expected=plus?a+b:a-b;question.textContent=a+(plus?' + ':' − ')+b+' = ?';
+        }else if(mode==='medium'){
+            if(Math.random()>.5){const a=rand(2,12),b=rand(2,12);expected=a*b;question.textContent=a+' × '+b+' = ?';}
+            else{const b=rand(2,12),result=rand(2,12),a=b*result;expected=result;question.textContent=a+' ÷ '+b+' = ?';}
+        }else{
+            const a=rand(1,9),x=rand(-9,12),b=rand(-15,15),c=a*x+b;
+            const signed=b===0?'':(b>0?' + '+b:' − '+Math.abs(b));
+            expected=x;question.textContent=a+'x'+signed+' = '+c+'. Tìm x';
+        }
+        answer.value='';answer.focus();
+    }
+    function finishMath(){
+        running=false;clearInterval(timer);timer=null;answer.disabled=true;check.disabled=true;
+        level.disabled=false;start.disabled=false;question.textContent='Hoàn thành! Điểm của bạn: '+score;
+        feedback.className='game-feedback';feedback.textContent='Bấm Bắt đầu để chơi lượt mới.';
+    }
+    function beginMath(){
+        clearInterval(timer);seconds=60;score=0;correct=0;total=0;running=true;
+        timeEl.textContent=seconds;scoreEl.textContent=score;correctEl.textContent=correct;totalEl.textContent=total;
+        feedback.textContent='';answer.disabled=false;check.disabled=false;level.disabled=true;start.disabled=true;
+        nextMath();timer=setInterval(()=>{seconds-=1;timeEl.textContent=seconds;if(seconds<=0)finishMath();},1000);
+    }
+    function submitMath(){
+        if(!running||answer.value==='')return;total+=1;
+        if(Number(answer.value)===expected){correct+=1;score+=10;feedback.className='game-feedback correct';feedback.textContent='Chính xác! +10 điểm';}
+        else{feedback.className='game-feedback wrong';feedback.textContent='Chưa đúng. Đáp án là '+expected+'.';}
+        scoreEl.textContent=score;correctEl.textContent=correct;totalEl.textContent=total;
+        window.setTimeout(()=>{if(running){feedback.textContent='';nextMath();}},450);
+    }
+    start.addEventListener('click',beginMath);check.addEventListener('click',submitMath);
+    answer.addEventListener('keydown',event=>{if(event.key==='Enter')submitMath();});
+
+    // Trò chơi 2: ghi nhớ Bảy sắc cầu vồng.
+    const colorButtons=[...document.querySelectorAll('#rainbowBoard button')];
+    const rainbowStatus=document.getElementById('rainbowStatus');
+    const rainbowLevel=document.getElementById('rainbowLevel');
+    const rainbowScore=document.getElementById('rainbowScore');
+    const rainbowBest=document.getElementById('rainbowBest');
+    const rainbowStart=document.getElementById('rainbowStart');
+    let colorSequence=[],colorInput=[],colorLocked=true,colorToken=0,colorPoints=0;
+    let best=Number(localStorage.getItem('rainbow-best')||0);rainbowBest.textContent=best;
+    const pause=ms=>new Promise(resolve=>window.setTimeout(resolve,ms));
+    async function showColors(){
+        colorLocked=true;colorInput=[];const token=++colorToken;rainbowStatus.textContent='Hãy quan sát...';
+        await pause(500);
+        for(const index of colorSequence){
+            if(token!==colorToken)return;colorButtons[index].classList.add('lit');await pause(430);
+            colorButtons[index].classList.remove('lit');await pause(170);
+        }
+        if(token===colorToken){colorLocked=false;rainbowStatus.textContent='Bây giờ hãy bấm lại đúng thứ tự.';}
+    }
+    function newRainbow(){
+        colorSequence=[rand(0,6),rand(0,6)];colorInput=[];colorPoints=0;
+        rainbowLevel.textContent='1';rainbowScore.textContent='0';rainbowStart.disabled=true;showColors();
+    }
+    colorButtons.forEach((button,index)=>button.addEventListener('click',()=>{
+        if(colorLocked)return;button.classList.add('lit');window.setTimeout(()=>button.classList.remove('lit'),180);
+        colorInput.push(index);const position=colorInput.length-1;
+        if(colorInput[position]!==colorSequence[position]){
+            colorLocked=true;colorToken+=1;rainbowStatus.textContent='Chuỗi chưa đúng. Bấm Chơi lại để thử lần nữa.';
+            rainbowStart.disabled=false;rainbowStart.innerHTML='<i class="bi bi-arrow-repeat"></i> Chơi lại';return;
+        }
+        if(colorInput.length===colorSequence.length){
+            colorLocked=true;colorPoints+=colorSequence.length*10;
+            const completed=Number(rainbowLevel.textContent);rainbowScore.textContent=colorPoints;
+            if(completed>best){best=completed;localStorage.setItem('rainbow-best',String(best));rainbowBest.textContent=best;}
+            rainbowStatus.textContent='Tuyệt! Chuỗi tiếp theo dài hơn một màu.';
+            colorSequence.push(rand(0,6));rainbowLevel.textContent=completed+1;window.setTimeout(showColors,900);
+        }
+    }));
+    rainbowStart.addEventListener('click',newRainbow);
+
+    // Trò chơi 3: bộ câu hỏi kiến thức nguyên bản theo bốn chặng.
+    const peakQuestions=[
+        ['Tổng hai nghiệm của phương trình x² − 5x + 6 = 0 là bao nhiêu?',['3','5','6','−5'],1],
+        ['Đạo hàm của hàm số y = x³ là gì?',['3x','x²','3x²','x³'],2],
+        ['Giá trị của sin 30° bằng bao nhiêu?',['0','1/2','√2/2','1'],1],
+        ['Hành tinh lớn nhất trong Hệ Mặt Trời là hành tinh nào?',['Trái Đất','Sao Hỏa','Sao Mộc','Sao Kim'],2],
+        ['Đơn vị cơ bản mang thông tin di truyền được gọi là gì?',['Tế bào','Gen','Mô','Enzyme'],1],
+        ['Tác giả của Truyện Kiều là ai?',['Nguyễn Du','Nguyễn Trãi','Xuân Diệu','Nam Cao'],0],
+        ['Nếu log₂x = 3 thì x bằng bao nhiêu?',['5','6','8','9'],2],
+        ['Thể tích khối lập phương cạnh a bằng biểu thức nào?',['a²','4a','a³','6a²'],2],
+        ['Nước có công thức hóa học nào?',['CO₂','H₂O','O₂','NaCl'],1],
+        ['Thủ đô của Việt Nam là thành phố nào?',['Huế','Đà Nẵng','Hà Nội','Cần Thơ'],2],
+        ['Cấp số cộng có u₁ = 2 và công sai d = 3. Khi đó u₄ bằng bao nhiêu?',['8','9','11','14'],2],
+        ['Một tam giác vuông có hai cạnh góc vuông 3 và 4. Cạnh huyền bằng bao nhiêu?',['5','6','7','8'],0],
+        ['Giới hạn lim(1/x) khi x tiến tới +∞ bằng bao nhiêu?',['−1','0','1','+∞'],1],
+        ['Vectơ a vuông góc vectơ b thì tích vô hướng a·b bằng bao nhiêu?',['−1','0','1','|a||b|'],1],
+        ['Hàm số y = 2ˣ có tính chất nào trên R?',['Nghịch biến','Đồng biến','Không xác định','Tuần hoàn'],1],
+        ['Xác suất của biến cố chắc chắn bằng bao nhiêu?',['0','1/2','1','2'],2]
+    ];
+    const peakStart=document.getElementById('peakStart'),peakNext=document.getElementById('peakNext');
+    const peakQuestion=document.getElementById('peakQuestion'),peakOptions=document.getElementById('peakOptions');
+    const peakFeedback=document.getElementById('peakFeedback'),peakRound=document.getElementById('peakRound');
+    const peakNumber=document.getElementById('peakNumber'),peakScore=document.getElementById('peakScore');
+    let peakSet=[],peakIndex=0,peakPoints=0,peakAnswered=false;
+    const rounds=['Khởi động','Khám phá','Tăng tốc','Về đích'];
+    function renderPeak(){
+        if(peakIndex>=peakSet.length){
+            peakRound.textContent='Hoàn thành';peakQuestion.textContent='Bạn đã chinh phục hành trình với '+peakPoints+' điểm.';
+            peakOptions.innerHTML='';peakNext.hidden=true;peakStart.disabled=false;peakStart.innerHTML='<i class="bi bi-arrow-repeat"></i> Chơi lại';return;
+        }
+        peakAnswered=false;peakFeedback.textContent='';peakFeedback.className='game-feedback';peakNext.hidden=true;
+        peakRound.textContent=rounds[Math.min(3,Math.floor(peakIndex/3))];peakNumber.textContent=peakIndex+1;
+        const item=peakSet[peakIndex];peakQuestion.textContent=item[0];peakOptions.innerHTML='';
+        item[1].forEach((option,index)=>{
+            const button=document.createElement('button');button.type='button';button.textContent=['A. ','B. ','C. ','D. '][index]+option;
+            button.addEventListener('click',()=>answerPeak(index));peakOptions.appendChild(button);
+        });
+    }
+    function answerPeak(selected){
+        if(peakAnswered)return;peakAnswered=true;const item=peakSet[peakIndex];
+        const buttons=[...peakOptions.querySelectorAll('button')];buttons.forEach(button=>button.disabled=true);
+        buttons[item[2]].classList.add('right');
+        if(selected===item[2]){peakPoints+=10;peakFeedback.textContent='Chính xác! +10 điểm';peakFeedback.className='game-feedback correct';}
+        else{buttons[selected].classList.add('wrong');peakFeedback.textContent='Chưa chính xác. Hãy xem đáp án được đánh dấu.';peakFeedback.className='game-feedback wrong';}
+        peakScore.textContent=peakPoints;peakNext.hidden=false;
+    }
+    function beginPeak(){
+        peakSet=peakQuestions.slice().sort(()=>Math.random()-.5).slice(0,12);peakIndex=0;peakPoints=0;
+        peakScore.textContent='0';peakStart.disabled=true;renderPeak();
+    }
+    peakStart.addEventListener('click',beginPeak);
+    peakNext.addEventListener('click',()=>{peakIndex+=1;renderPeak();});
+})();
+</script>
+{% endblock %}

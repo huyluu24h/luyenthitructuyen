@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Đảo đề - Trộn đề{% endblock %}
+{% block content %}
+
+<div class="top">
+    <div>
+        <h2>Đảo đề (Trộn đề)</h2>
+        <p class="muted">
+            Phần I đảo câu + phương án; Phần II/III chỉ đảo câu;
+            Phần IV đảo câu. Đáp án luôn đi đúng câu.
+        </p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Tải đề Word/PDF/LaTeX</h3>
+
+    <form method="post" enctype="multipart/form-data" class="registration-form exam-meta-form">
+    <div><label>Sở</label><input name="department" placeholder="SỞ GD&ĐT ..."></div>
+    <div><label>Trường</label><input name="school" placeholder="TRƯỜNG ..."></div>
+
+    <div><label>Kỳ thi</label><input name="exam_name" placeholder="ĐỀ KIỂM TRA CUỐI HỌC KÌ ..."></div>
+    <div><label>Môn</label><input name="subject" placeholder="TOÁN LỚP 12"></div>
+
+    <div><label>Năm học</label><input name="school_year" placeholder="2025 - 2026"></div>
+    <div><label>Thời gian làm bài</label><input name="duration_text" value="90 phút"></div>
+
+    <div>
+        <label>Số lượng đề cần đảo</label>
+        <input id="version_count" type="number" min="1" max="100" name="version_count" value="4" required>
+    </div>
+
+    <div>
+        <label>Mã đề do giáo viên nhập</label>
+        <textarea id="exam_codes"
+                  name="exam_codes"
+                  rows="3"
+                  required
+                  placeholder="Ví dụ 4 đề: 1201, 1202, 1203, 1204"></textarea>
+        <small>Nhập đúng số mã tương ứng số lượng đề; cách nhau bằng dấu phẩy hoặc xuống dòng.</small>
+    </div>
+
+    <div class="form-full">
+        <label>File Word/PDF/LaTeX (.tex)</label>
+        <input type="file" name="file" accept=".docx,.pdf,.tex" required>
+    </div>
+
+    <div class="form-full">
+        <button class="btn" type="submit">Tải đề lên</button>
+    </div>
+</form>
+</div>
+
+<div class="grid">
+{% for s in sources %}
+    <article class="card">
+        <h3>{{ s.title }}</h3>
+        <p>{{ s.question_count }} câu</p>
+        <p class="muted">
+            {{ s.source_file }} · {{ s.created_at }}
+        </p>
+
+        <div class="shuffle-actions">
+            <a class="btn secondary"
+               href="{{ url_for('shuffle_exam_check',source_id=s.id) }}">
+                Kiểm tra
+            </a>
+
+            {% if s.source_file and s.source_file.lower().endswith('.docx') %}
+            <a class="btn secondary"
+               href="{{ url_for('shuffle_exam_word_preview',source_id=s.id) }}">
+                Xem Word gốc
+            </a>
+            {% endif %}
+
+            <form method="post"
+                  action="{{ url_for('shuffle_exam_mix',source_id=s.id) }}">
+                <button class="btn success" type="submit">
+                    <i class="bi bi-shuffle"></i> Đảo & xem tất cả
+                </button>
+            </form>
+
+            <form method="post"
+                  action="{{ url_for('shuffle_exam_delete',source_id=s.id) }}"
+                  onsubmit="return confirm('Xóa đề này khỏi mục Đảo đề?');">
+                <button class="btn btn-danger" type="submit">
+                    Xóa
+                </button>
+            </form>
+        </div>
+    </article>
+{% else %}
+    <div class="empty">
+        Chưa có đề nào trong mục Đảo đề.
+    </div>
+{% endfor %}
+</div>
+
+{% endblock %}

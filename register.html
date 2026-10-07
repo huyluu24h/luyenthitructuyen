@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Đăng ký tài khoản{% endblock %}
+{% block content %}
+<div class="card registration-card">
+    <h2>
+        Đăng ký
+        {% if role=='teacher' %}Giáo viên{% else %}Học sinh{% endif %}
+    </h2>
+
+    <p class="muted">
+        Sau khi gửi, tài khoản ở trạng thái <strong>Chờ Admin duyệt</strong>.
+        Chỉ sau khi Admin đồng ý mới đăng nhập được.
+    </p>
+
+    <form method="post" class="registration-form">
+        <div>
+            <label>Họ và tên *</label>
+            <input name="full_name" required>
+        </div>
+
+        <div>
+            <label>Tên đăng nhập *</label>
+            <input name="username" required autocomplete="username">
+        </div>
+
+        {% if role=='student' %}
+        <div>
+            <label>Mã học sinh</label>
+            <input name="student_code" inputmode="numeric">
+            <small>
+                Nếu mã này đã có trong Excel của giáo viên, hãy dùng Mã học sinh
+                để đăng nhập thay vì tạo tài khoản mới.
+            </small>
+        </div>
+        {% endif %}
+
+        <div>
+            <label>Email</label>
+            <input type="email" name="email">
+        </div>
+
+        <div>
+            <label>Số điện thoại</label>
+            <input name="phone" inputmode="tel">
+        </div>
+
+        <div>
+            <label>Mật khẩu *</label>
+            <input type="password" name="password" required minlength="6">
+        </div>
+
+        <div>
+            <label>Nhập lại mật khẩu *</label>
+            <input type="password" name="password2" required minlength="6">
+        </div>
+
+        <div class="form-full">
+            <button class="btn" type="submit">
+                Gửi yêu cầu đăng ký
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

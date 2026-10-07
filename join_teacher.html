@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Tham gia lớp{% endblock %}
+{% block content %}<div class="card"><h2>Tham gia lớp của {{ invite.teacher_name }}</h2>
+<p>Lớp/nhóm: <strong>{{ invite.class_name or 'Nhóm chung' }}</strong></p>
+<p>Sau khi xác nhận, bạn được xem đề, tài liệu và ngân hàng luyện tập của giáo viên này.</p>
+<form method="post"><button class="btn">Xác nhận tham gia</button></form></div>{% endblock %}

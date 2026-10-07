@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}Chi tiết bài làm{% endblock %}{% block content %}
+<div class="top"><div><h2>{{se.full_name}} — {{exam.title}}</h2><p>Mã HS: {{se.student_code}} · Tổng điểm: <b>{{se.score}}</b></p></div><a class="btn secondary" href="{{url_for('exam_results',exam_id=exam.id)}}">← Quay lại kết quả</a></div>
+<div class="card"><h3>Chống gian lận</h3><p>Số lỗi: <b>{{se.violations}}</b></p>{% if logs %}<ul>{% for x in logs %}<li>{{x.created_at}} — <b>{{x.event_type}}</b> — {{x.details}}</li>{% endfor %}</ul>{% else %}<p class="muted">Không ghi nhận lỗi.</p>{% endif %}</div>
+<div class="card table-wrap"><table class="result-table"><tr><th>Phần</th><th>Câu</th><th>Loại</th><th>Trả lời</th><th>Đúng?</th></tr>{% for a in answers %}<tr><td>{{['','I','II','III','IV'][a.section]}}</td><td>{{a.section_order}}</td><td>{{a.qtype}}</td><td>{{a.answer_json or a.selected_original_key or ''}}</td><td>{% if a.is_correct==1 %}Đúng{% elif a.is_correct==0 %}Sai{% else %}Chờ chấm{% endif %}</td></tr>{% endfor %}</table></div>
+{% endblock %}

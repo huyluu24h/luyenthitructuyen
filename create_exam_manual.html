@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}Tạo đề thủ công bằng LaTeX{% endblock %}
+{% block content %}
+<div class="top">
+    <div>
+        <h2>Tạo đề thủ công bằng LaTeX</h2>
+        <p class="muted">
+            Gõ văn bản bình thường; công thức đặt trong
+            <code>$...$</code> hoặc <code>$$...$$</code>.
+        </p>
+    </div>
+</div>
+
+<form method="post" id="manualExamForm">
+<div class="card">
+    <h3>Thông tin đề</h3>
+    <div class="registration-form">
+        <div>
+            <label>Tên đề</label>
+            <input name="title" value="Đề kiểm tra thủ công" required>
+        </div>
+        <div>
+            <label>Thời gian (phút)</label>
+            <input type="number" name="duration" value="90" min="1">
+        </div>
+
+        <div><label>Điểm Phần I</label><input name="p1" value="2"></div>
+        <div><label>Điểm Phần II</label><input name="p2" value="2"></div>
+        <div><label>Điểm Phần III</label><input name="p3" value="3"></div>
+        <div><label>Điểm Phần IV</label><input name="p4" value="3"></div>
+
+        <div>
+            <label>Phương án chấm Phần II</label>
+            <select name="p2_mode">
+                <option value="1">PA1: mỗi ý đúng 0,25</option>
+                <option value="2">PA2: 1/2/3/4 ý = 0,1/0,25/0,5/1</option>
+            </select>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" name="anti_cheat" checked>
+                Bật chống gian lận
+            </label>
+            <input type="number" name="max_violations" value="3" min="1">
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="questions_json" id="questions_json">
+
+<div id="manualQuestions"></div>
+
+<div class="card manual-actions">
+    <button class="btn secondary" type="button" onclick="addQuestion()">
+        + Thêm câu
+    </button>
+    <button class="btn success" type="submit">
+        Tạo bản nháp để kiểm tra
+    </button>
+</div>
+</form>
+
+<template id="questionTemplate">
+<section class="card manual-question">
+    <div class="manual-question-head">
+        <strong class="q-number"></strong>
+        <button type="button" class="btn btn-danger remove-q">Xóa câu</button>
+    </div>
+
+    <div class="registration-form">
+        <div>
+            <label>Phần</label>
+            <select class="q-section">
+                <option value="1">Phần I - Nhiều lựa chọn</option>
+                <option value="2">Phần II - Đúng/Sai</option>
+                <option value="3">Phần III - Trả lời ngắn</option>
+                <option value="4">Phần IV - Tự luận</option>
+            </select>
+        </div>
+
+        <div class="form-full">
+            <label>Nội dung câu hỏi (hỗ trợ LaTeX)</label>
+            <textarea class="q-stem" rows="4"
+                      placeholder="Ví dụ: Hàm số $y=x^3-3x$ có đạo hàm là..."></textarea>
+        </div>
+
+        <div class="q-options form-full">
+            <div class="manual-option-grid">
+                <label>A<textarea class="q-a" rows="2"></textarea></label>
+                <label>B<textarea class="q-b" rows="2"></textarea></label>
+                <label>C<textarea class="q-c" rows="2"></textarea></label>
+                <label>D<textarea class="q-d" rows="2"></textarea></label>
+            </div>
+        </div>
+
+        <div class="form-full">
+            <label>Đáp án</label>
+            <input class="q-answer"
+                   placeholder="Phần I: A | Phần II: ĐSĐS | Phần III: -1,25 | Phần IV: để trống">
+        </div>
+    </div>
+</section>
+</template>
+
+<script>
+const holder = document.getElementById('manualQuestions');
+const tpl = document.getElementById('questionTemplate');
+
+function renumber(){
+    [...holder.querySelectorAll('.manual-question')].forEach((q,i)=>{
+        q.querySelector('.q-number').textContent='Câu nhập '+(i+1);
+    });
+}
+
+function updateSectionUI(card){
+    const sec = Number(card.querySelector('.q-section').value);
+    const opts = card.querySelector('.q-options');
+    const ans = card.querySelector('.q-answer');
+
+    opts.style.display = (sec===1 || sec===2) ? '' : 'none';
+
+    if(sec===1) ans.placeholder='Đáp án A/B/C/D';
+    if(sec===2) ans.placeholder='Ví dụ: ĐSĐS';
+    if(sec===3) ans.placeholder='Ví dụ: -1,25';
+    if(sec===4) ans.placeholder='Tự luận: để trống';
+}
+
+function addQuestion(){
+    const node = tpl.content.cloneNode(true);
+    holder.appendChild(node);
+    const card = holder.lastElementChild;
+
+    card.querySelector('.remove-q').onclick=()=>{
+        card.remove();
+        renumber();
+    };
+
+    card.querySelector('.q-section').onchange=()=>updateSectionUI(card);
+
+    updateSectionUI(card);
+    renumber();
+
+    if(window.MathJax && MathJax.typesetPromise){
+        MathJax.typesetPromise();
+    }
+}
+
+document.getElementById('manualExamForm').addEventListener('submit',e=>{
+    const questions = [];
+
+    holder.querySelectorAll('.manual-question').forEach(card=>{
+        questions.push({
+            section:Number(card.querySelector('.q-section').value),
+            stem:card.querySelector('.q-stem').value,
+            options:{
+                A:card.querySelector('.q-a').value,
+                B:card.querySelector('.q-b').value,
+                C:card.querySelector('.q-c').value,
+                D:card.querySelector('.q-d').value
+            },
+            answer:card.querySelector('.q-answer').value
+        });
+    });
+
+    if(!questions.length){
+        e.preventDefault();
+        alert('Hãy thêm ít nhất một câu.');
+        return;
+    }
+
+    document.getElementById('questions_json').value=JSON.stringify(questions);
+});
+
+addQuestion();
+</script>
+{% endblock %}

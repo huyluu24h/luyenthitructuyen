@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Nhận đề kiểm tra{% endblock %}
+{% block content %}<div class="card"><h2>Đề kiểm tra: {{ invite.title }}</h2>
+<p>Giáo viên: <strong>{{ invite.teacher_name }}</strong></p>
+<p>Hãy xác nhận để nhận đề kiểm tra và tham gia kho học liệu của giáo viên.</p>
+<form method="post"><button class="btn">Nhận đề và bắt đầu làm bài</button></form></div>{% endblock %}

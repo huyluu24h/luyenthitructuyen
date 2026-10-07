@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Tiện ích{% endblock %}
+{% block content %}
+
+<div class="portal-hero">
+    <span class="eyebrow">CÔNG CỤ HỖ TRỢ DẠY VÀ HỌC</span>
+    <h1>Tiện ích</h1>
+    <p>Chọn công cụ cần sử dụng. Mỗi chức năng được mở trong một trang riêng.</p>
+</div>
+
+<div class="portal-menu-stage">
+<div class="portal-grid portal-icon-grid utilities-portal-grid">
+    <a class="portal-icon-card" href="{{ url_for('pdf_to_word') }}">
+        <span class="portal-icon"><i class="bi bi-file-earmark-word-fill"></i></span>
+        <span class="portal-icon-label">PDF sang Word</span>
+        <small>Văn bản, LaTeX và ảnh</small>
+    </a>
+
+    <a class="portal-icon-card" href="{{ url_for('teacher_ai_utility') }}">
+        <span class="portal-icon"><i class="bi bi-robot"></i></span>
+        <span class="portal-icon-label">Giáo viên AI</span>
+        <small>Trợ lý giải Toán</small>
+    </a>
+
+    <a class="portal-icon-card" href="{{ url_for('student_games') }}">
+        <span class="portal-icon"><i class="bi bi-controller"></i></span>
+        <span class="portal-icon-label">Trò chơi học sinh</span>
+        <small>Toán học, ghi nhớ, kiến thức</small>
+    </a>
+</div>
+</div>
+
+{% endblock %}

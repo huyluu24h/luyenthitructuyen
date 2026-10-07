@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Giáo viên{% endblock %}
+{% block content %}
+<div class="portal-hero">
+    <span class="eyebrow">KHU VỰC GIÁO VIÊN</span>
+    <h1>Giáo viên</h1>
+    <p>Quản lý thi trực tuyến, ngân hàng đề và đảo đề.</p>
+</div>
+
+{% if session.get('role')=='teacher' and not session.get('is_admin') %}
+<div class="portal-menu-stage">
+<div class="portal-grid portal-icon-grid teacher-portal-grid">
+    <a class="portal-icon-card" href="{{ url_for('teacher_dashboard') }}">
+        <span class="portal-icon"><i class="bi bi-file-earmark-arrow-up"></i></span>
+        <span class="portal-icon-label">Upload đề</span>
+        <small>Upload Word/PDF/LaTeX · Xuất bản · Học sinh làm · Chấm điểm · Kết quả</small>
+    </a>
+    <a class="portal-icon-card" href="{{ url_for('question_bank') }}">
+        <span class="portal-icon"><i class="bi bi-bank"></i></span>
+        <span class="portal-icon-label">Ngân hàng đề</span>
+        <small>Quản lý đề để học sinh tự luyện</small>
+    </a>
+    <a class="portal-icon-card" href="{{ url_for('shuffle_exam_manager') }}">
+        <span class="portal-icon"><i class="bi bi-shuffle"></i></span>
+        <span class="portal-icon-label">Đảo đề</span>
+        <small>Trộn đề theo đúng quy tắc từng phần</small>
+    </a>
+</div>
+</div>
+{% else %}
+<div class="auth-choice-grid">
+    <article class="portal-box">
+        <h3>Đăng nhập Giáo viên</h3>
+        <p>Đăng nhập để upload đề, quản lý ngân hàng đề và đảo đề.</p>
+        <a class="btn secondary" href="{{ url_for('login',role='teacher') }}">Đăng nhập</a>
+    </article>
+</div>
+{% endif %}
+{% endblock %}

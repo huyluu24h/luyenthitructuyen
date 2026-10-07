@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Tạo đề{% endblock %}
+{% block content %}
+<h2>Tạo đề</h2>
+<div class="feature-grid two-cols">
+    <div class="feature-card">
+        <h3>Tạo đề thủ công</h3>
+        <p>
+            Gõ trực tiếp nội dung câu hỏi bằng văn bản và LaTeX, sau đó kiểm tra bản nháp rồi xuất bản.
+        </p>
+        <a class="btn" href="{{ url_for('create_exam_manual') }}">
+            Tạo đề thủ công
+        </a>
+    </div>
+
+    <div class="feature-card">
+        <h3>Tạo đề bằng AI</h3>
+        <p>
+            Nhập yêu cầu tạo đề hoặc tải ma trận lên để chuẩn bị bản nháp đề.
+        </p>
+        <a class="btn" href="{{ url_for('create_exam_ai') }}">
+            Tạo đề bằng AI
+        </a>
+    </div>
+</div>
+{% endblock %}

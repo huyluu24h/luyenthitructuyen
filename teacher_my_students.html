@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Học sinh của tôi{% endblock %}
+{% block content %}
+<h2>Học sinh của tôi</h2>
+<p>Chỉ học sinh tham gia bằng đường mời của giáo viên mới xem được học liệu và đề luyện trong kho này. Một học sinh có thể tham gia nhiều giáo viên.</p>
+<div class="card"><h3>Tạo liên kết mời lớp/nhóm</h3>
+<form action="{{ url_for('teacher_create_invite') }}" method="post">
+<label>Tên lớp/nhóm <input name="class_name" maxlength="80" placeholder="Ví dụ: 12A1"></label>
+<button class="btn">Tạo liên kết mời</button></form></div>
+<div class="card"><h3>Liên kết đang hoạt động</h3>
+{% for i in invites if i.active %}
+<div><strong>{{ i.class_name or 'Nhóm chung' }}</strong><br>
+<input style="width:min(100%,720px)" readonly value="{{ url_for('join_teacher',token=i.token,_external=True) }}" onclick="this.select()">
+<form action="{{ url_for('teacher_revoke_invite',token=i.token) }}" method="post" style="display:inline"><button class="btn secondary">Ngừng nhận thêm học sinh qua liên kết</button></form></div><hr>
+{% else %}<p>Chưa có liên kết.</p>{% endfor %}</div>
+<div class="card"><h3>Học sinh đã tham gia ({{ students|length }})</h3>
+<table><thead><tr><th>Lớp/nhóm</th><th>Họ tên</th><th>Mã HS</th><th>Tên tài khoản</th><th></th></tr></thead><tbody>
+{% for st in students %}<tr><td>{{ st.class_name }}</td><td>{{ st.full_name }}</td><td>{{ st.student_code or '' }}</td><td>{{ st.username }}</td><td>
+<form method="post" action="{{ url_for('teacher_remove_student',student_id=st.id) }}" onsubmit="return confirm('Gỡ học sinh khỏi kho học liệu này?')"><button class="btn secondary">Gỡ khỏi lớp</button></form></td></tr>
+{% else %}<tr><td colspan="5">Chưa có học sinh tham gia.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

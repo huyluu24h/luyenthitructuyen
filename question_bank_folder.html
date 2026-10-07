@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ folder.name }}{% endblock %}
+{% block content %}
+<div class="folder-detail-head">
+    <a class="folder-back-link" href="{{ url_for('question_bank') }}"><i class="bi bi-arrow-left"></i> Tất cả thư mục</a>
+    <div class="folder-detail-title"><span class="folder-detail-icon"><i class="bi bi-folder-fill"></i></span>
+        <div><span class="eyebrow">NGÂN HÀNG ĐỀ</span><h1>{{ folder.name }}</h1></div>
+    </div>
+    {% if not is_unfiled %}
+    <form class="folder-rename-form" method="post"
+          action="{{ url_for('teacher_rename_bank_folder',folder_id=folder.id) }}">
+        <label for="bankFolderName">Đổi tên thư mục</label>
+        <div class="folder-rename-controls">
+            <input id="bankFolderName" name="name" value="{{ folder.name }}"
+                   maxlength="120" required>
+            <button class="btn secondary" type="submit">
+                <i class="bi bi-pencil-square"></i> Lưu tên mới
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% if not is_unfiled %}
+<div class="card">
+    <h3><i class="bi bi-cloud-arrow-up"></i> Upload đề vào thư mục này</h3>
+    <form method="post" action="{{ url_for('question_bank') }}" enctype="multipart/form-data" class="registration-form">
+        <input type="hidden" name="folder_id" value="{{ folder.id }}">
+        <div><label>Tên ngân hàng / tên đề nguồn</label><input name="title" placeholder="Ví dụ: Đề ôn tập Hình học 11"></div>
+        <div><label>File Word/PDF/LaTeX</label><input type="file" name="file" accept=".docx,.pdf,.tex" required></div>
+        <div class="form-full"><button class="btn" type="submit"><i class="bi bi-upload"></i> Phân tích và đưa vào thư mục</button></div>
+    </form>
+</div>
+{% else %}<div class="info-box">Đây là các đề cũ chưa có thư mục. Đề mới nên được upload trong một thư mục đã tạo.</div>{% endif %}
+
+<div class="folder-list-heading"><h3>Danh sách đề trong thư mục</h3><span class="folder-count">{{ sources|length }} đề</span></div>
+{% if sources %}<div class="grid bank-folder-source-grid">
+    {% for s in sources %}<article class="card bank-source-card">
+        <span class="source-card-icon"><i class="bi bi-file-earmark-richtext"></i></span>
+        <h3>{{ s.title }}</h3><p><strong>{{ s.question_count }}</strong> câu</p><p class="muted">{{ s.source_file }} · {{ s.created_at }}</p>
+        <div class="source-card-actions">
+            <a class="btn" href="{{ url_for('question_bank_detail',source_id=s.id) }}"><i class="bi bi-eye"></i> Xem / chọn câu</a>
+            <form method="post" action="{{ url_for('delete_question_bank',source_id=s.id) }}" onsubmit="return confirm('Xóa ngân hàng đề này?');"><button class="btn btn-danger">Xóa</button></form>
+        </div>
+    </article>{% endfor %}
+</div>{% else %}<div class="empty">Thư mục này chưa có đề. Hãy upload file Word/PDF/LaTeX ở phía trên.</div>{% endif %}
+{% endblock %}

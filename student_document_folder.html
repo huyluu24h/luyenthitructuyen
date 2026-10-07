@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{{ folder.name }}{% endblock %}
+{% block content %}
+<div class="folder-detail-head">
+    <a class="folder-back-link" href="{{ url_for('student_documents') }}"><i class="bi bi-arrow-left"></i> Tất cả thư mục</a>
+    <div class="folder-detail-title"><span class="folder-detail-icon"><i class="bi bi-folder-fill"></i></span>
+        <div><span class="eyebrow">TÀI LIỆU HỌC TẬP</span><h1>{{ folder.name }}</h1>{% if folder.teacher_name %}<p class="muted">Giáo viên: {{ folder.teacher_name }}</p>{% endif %}</div>
+    </div>
+</div>
+{% if documents %}<div class="grid document-folder-grid">
+    {% for d in documents %}<article class="document-item-card">
+        <h4>{{ d.title }}</h4>{% if d.description %}<p>{{ d.description }}</p>{% endif %}
+        <p class="muted">{{ d.original_name }}{% if is_unfiled and d.teacher_name %} · {{ d.teacher_name }}{% endif %}</p>
+        <div class="document-actions">
+            <a class="btn secondary" href="{{ url_for('view_document',doc_id=d.id) }}"><i class="bi bi-eye"></i> Xem</a>
+            <a class="btn" href="{{ url_for('download_document',doc_id=d.id) }}"><i class="bi bi-download"></i> Tải xuống</a>
+        </div>
+    </article>{% endfor %}
+</div>{% else %}<div class="empty">Thư mục này chưa có tài liệu.</div>{% endif %}
+{% endblock %}

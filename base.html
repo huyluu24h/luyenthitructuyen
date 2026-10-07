@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="vi" class="mathjax-loading">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>{% block title %}Hệ thống thi trực tuyến{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='style.css',v='5.25.2') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static',filename='bootstrap-icons/font/bootstrap-icons.min.css') }}">
+    <script>
+      /* Áp dụng giao diện trước lần vẽ đầu tiên để topbar không xuất hiện trễ. */
+      (function(){
+        try{
+          const theme=localStorage.getItem('qltt-theme');
+          const accent=localStorage.getItem('qltt-accent')||'#1769aa';
+          if(theme==='dark') document.documentElement.classList.add('app-dark');
+          document.documentElement.style.setProperty('--blue',accent);
+          document.documentElement.style.setProperty('--site-blue',accent);
+          document.documentElement.style.setProperty('--theme-accent',accent);
+        }catch(e){}
+      })();
+    </script>
+    <!-- =========================================================
+         V5.22.13 — BỘ NẠP MATHJAX CỦA V5.22.0 + FALLBACK CỤC BỘ
+         - MTEF/OMML được chuyển và lưu thành LaTeX chuẩn không có $...$.
+         - MathJax cục bộ dàn mọi công thức cùng kiểu và cùng tỷ lệ.
+         - Chỉ hình minh họa thật còn dùng thẻ ảnh trên màn hình đề.
+         - File Word tải về vẫn giữ MathType/OLE nguyên bản như V5.20.7.
+         ========================================================= -->
+    <script>
+      window.markMathJaxFailed = function(){
+        window.clearTimeout(window.mathJaxSafetyTimer);
+        document.documentElement.classList.remove('mathjax-loading');
+        document.documentElement.classList.add('mathjax-failed');
+      };
+      window.markMathJaxReady = function(){
+        window.clearTimeout(window.mathJaxSafetyTimer);
+        document.documentElement.classList.remove(
+          'mathjax-loading','mathjax-failed'
+        );
+        document.documentElement.classList.add('mathjax-ready');
+      };
+      window.localMathJaxUrl = {{ url_for('static',filename='mathjax/es5/tex-mml-chtml.js',v='3.2.2')|tojson }};
+      window.loadLocalMathJax = function(script){
+        if(script.dataset.localRetry==='1'){
+          window.markMathJaxFailed();
+          return;
+        }
+        script.dataset.localRetry='1';
+        script.src=window.localMathJaxUrl;
+      };
+      window.onMathJaxScriptLoaded = function(){
+        var startup=window.MathJax&&window.MathJax.startup;
+        if(!startup||!startup.promise){
+          window.setTimeout(window.onMathJaxScriptLoaded,50);
+          return;
+        }
+        startup.promise.then(window.markMathJaxReady).catch(
+          window.markMathJaxFailed
+        );
+      };
+      window.mathJaxSafetyTimer = window.setTimeout(
+        window.markMathJaxFailed,
+        12000
+      );
+      window.MathJax = {
+        tex: {
+          inlineMath: [['\\(','\\)'], ['$','$']],
+          displayMath: [['\\[','\\]']],
+          processEscapes: true
+        },
+        chtml: { scale: 1 },
+        options: {
+          skipHtmlTags: ['script','noscript','style','textarea','pre','code']
+        }
+      };
+    </script>
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"
+            onload="window.onMathJaxScriptLoaded()"
+            onerror="window.loadLocalMathJax(this)"></script>
+
+<style id="latex-web-table-v5297">
+.latex-table-wrap{width:100%;overflow-x:auto;margin:.55rem 0 .7rem 0;}
+.latex-web-table{border-collapse:collapse;margin:0 auto;font-family:"Times New Roman",Times,serif;font-size:13pt;line-height:1.15;background:#fff;color:inherit;}
+.latex-web-table td,.latex-web-table th{border:1px solid #555;padding:.25em .55em;vertical-align:middle;text-align:center;white-space:nowrap;}
+.latex-web-table td:first-child{text-align:left;}
+.latex-web-table mjx-container{font-size:100%!important;margin:0!important;}
+</style>
+</head>
+<body class="site-body {% block body_class %}{% endblock %}">
+
+<header class="global-topbar" aria-label="Thanh công cụ người dùng">
+    <a class="global-brand" href="{{ url_for('index') }}">
+        <i class="bi bi-mortarboard-fill"></i>
+        <span>Hệ thống Thi Trực Tuyến</span>
+    </a>
+
+    <div class="global-topbar-center">
+        {% if session.get('user_id') %}
+        <span class="presence-chip" title="Đang trực tuyến">
+            <span class="presence-dot"></span>
+            Trực tuyến
+        </span>
+
+        <span id="liveClock"
+              class="global-clock"
+              aria-label="Ngày giờ hiện tại">
+            <i class="bi bi-clock"></i>
+            <span>{{ topbar_time }} · {{ topbar_date }}</span>
+        </span>
+        {% else %}
+        <span class="topbar-welcome">
+            Học tập • Kiểm tra • Quản lý trực tuyến
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="global-topbar-actions">
+        {% if session.get('user_id') %}
+        <div class="active-profile">
+            <i class="bi bi-person-circle"></i>
+            <div>
+                <strong>{{ session.get('full_name') or session.get('username') or 'Thành viên' }}</strong>
+                <small>
+                    {% if session.get('is_admin') %}Quản trị
+                    {% elif session.get('role')=='teacher' %}Giáo viên
+                    {% elif session.get('role')=='student' %}Học sinh
+                    {% else %}Thành viên{% endif %}
+                </small>
+            </div>
+        </div>
+
+        <button class="topbar-round-btn"
+                type="button"
+                id="fullscreenToggle"
+                title="Toàn màn hình"
+                aria-label="Bật hoặc tắt toàn màn hình">
+            <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+
+        <button class="topbar-round-btn"
+                type="button"
+                id="themeToggle"
+                title="Đổi giao diện sáng/tối"
+                aria-label="Đổi giao diện sáng hoặc tối">
+            <i class="bi bi-moon-stars"></i>
+        </button>
+
+        <div class="color-control">
+            <button class="topbar-round-btn" type="button" id="colorToggle"
+                    title="Chỉnh màu giao diện" aria-label="Mở bảng chọn màu"
+                    aria-expanded="false"><i class="bi bi-palette-fill"></i></button>
+            <div class="color-palette" id="colorPalette" hidden>
+                <strong>Màu giao diện</strong>
+                <div class="color-swatches">
+                    <button type="button" data-color="#1769aa" style="--swatch:#1769aa" aria-label="Xanh dương"></button>
+                    <button type="button" data-color="#19764b" style="--swatch:#19764b" aria-label="Xanh lá"></button>
+                    <button type="button" data-color="#7357a6" style="--swatch:#7357a6" aria-label="Tím"></button>
+                    <button type="button" data-color="#b45c22" style="--swatch:#b45c22" aria-label="Cam"></button>
+                    <button type="button" data-color="#a73746" style="--swatch:#a73746" aria-label="Đỏ"></button>
+                </div>
+                <label for="customThemeColor">Màu tùy chọn</label>
+                <input id="customThemeColor" type="color" value="#1769aa">
+            </div>
+        </div>
+
+        {% if session.get('is_admin') %}
+        <a class="topbar-login-short" href="{{ url_for('admin_dashboard') }}" title="Phân quyền và đăng bài">
+            <i class="bi bi-shield-lock-fill"></i>
+            Phân quyền
+        </a>
+        {% endif %}
+
+        <a class="topbar-exit"
+           href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i>
+            Thoát
+        </a>
+        {% else %}
+        <a class="topbar-login-short"
+           href="{{ url_for('login') }}">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Đăng nhập
+        </a>
+        {% endif %}
+    </div>
+</header>
+<script>
+/* Chạy ngay sau topbar, không đợi toàn bộ nội dung dài của trang tải xong. */
+(function(){
+    const el=document.getElementById('liveClock');
+    if(!el) return;
+    const now=new Date();
+    const time=now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    const date=now.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+    const text=el.querySelector('span');
+    if(text) text.textContent=time+' · '+date;
+})();
+</script>
+
+
+    <!-- V5.29.13 SLIM — chỉ giữ 3 menu chính -->
+    <aside class="left-sidebar">
+        <a class="sidebar-logo-link" href="{{ url_for('index') }}">
+            <img class="sidebar-logo" src="{{ url_for('static',filename='site_logo.jpg') }}" alt="Logo hệ thống">
+        </a>
+        <nav class="side-menu">
+            <a class="side-menu-item" href="{{ url_for('index') }}">
+                <i class="bi bi-house-door-fill" aria-hidden="true"></i><span>Trang chủ</span>
+            </a>
+            {% if session.get('is_admin') %}
+            <a class="side-menu-item admin-permission-entry" href="{{ url_for('admin_dashboard') }}" title="Phân quyền thành viên và đăng nội dung Trang chủ">
+                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span>Phân quyền & Đăng bài</span>
+            </a>
+            {% else %}
+            <a class="side-menu-item" href="{% if session.get('role')=='teacher' %}{{ url_for('teacher_portal') }}{% else %}{{ url_for('login',role='teacher',next=url_for('teacher_portal')) }}{% endif %}">
+                <i class="bi bi-person-workspace" aria-hidden="true"></i><span>Giáo viên</span>
+            </a>
+            <a class="side-menu-item" href="{% if session.get('role')=='student' %}{{ url_for('student_portal') }}{% else %}{{ url_for('login',role='student',next=url_for('student_portal')) }}{% endif %}">
+                <i class="bi bi-mortarboard-fill" aria-hidden="true"></i><span>Học sinh</span>
+            </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <div class="site-content">
+        <header class="top-header">
+            <a class="brand" href="{{ url_for('index') }}">
+                Hệ thống Thi Trực Tuyến
+            </a>
+
+            {% if session.get('user_id') %}
+            <div class="user-box">
+                <span>{{ session.get('full_name') }}</span>
+                <a href="{{ url_for('logout') }}">Đăng xuất</a>
+            </div>
+            {% endif %}
+        </header>
+
+        <main class="main-content">
+            {% with messages=get_flashed_messages() %}
+                {% for m in messages %}
+                <div class="flash">{{ m }}</div>
+                {% endfor %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+<footer class="site-footer">Web tạo bởi Bạn CHAT GPT 2026</footer>
+<script>
+(function(){
+    function updateLiveClock(){
+        const el=document.getElementById('liveClock');
+        if(!el) return;
+        const now=new Date();
+        const time=now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+        const date=now.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+        const text=el.querySelector('span');
+        if(text) text.textContent=time+' · '+date;
+    }
+    updateLiveClock();
+    setInterval(updateLiveClock,1000);
+
+    const fsBtn=document.getElementById('fullscreenToggle');
+    if(fsBtn){
+        fsBtn.addEventListener('click',async()=>{
+            try{
+                if(!document.fullscreenElement){
+                    await document.documentElement.requestFullscreen();
+                }else{
+                    await document.exitFullscreen();
+                }
+            }catch(e){}
+        });
+    }
+
+    const btn=document.getElementById('themeToggle');
+    if(btn){
+        const saved=localStorage.getItem('qltt-theme');
+        if(saved==='dark') document.documentElement.classList.add('app-dark');
+
+        btn.addEventListener('click',()=>{
+            document.documentElement.classList.toggle('app-dark');
+            localStorage.setItem(
+                'qltt-theme',
+                document.documentElement.classList.contains('app-dark')?'dark':'light'
+            );
+        });
+    }
+
+    function applyThemeColor(color){
+        if(!/^#[0-9a-f]{6}$/i.test(color||'')) return;
+        document.documentElement.style.setProperty('--blue',color);
+        document.documentElement.style.setProperty('--site-blue',color);
+        document.documentElement.style.setProperty('--theme-accent',color);
+        localStorage.setItem('qltt-accent',color);
+        const picker=document.getElementById('customThemeColor');
+        if(picker) picker.value=color;
+    }
+    applyThemeColor(localStorage.getItem('qltt-accent')||'#1769aa');
+
+    const colorBtn=document.getElementById('colorToggle');
+    const palette=document.getElementById('colorPalette');
+    if(colorBtn&&palette){
+        colorBtn.addEventListener('click',event=>{
+            event.stopPropagation();
+            palette.hidden=!palette.hidden;
+            colorBtn.setAttribute('aria-expanded',String(!palette.hidden));
+        });
+        palette.addEventListener('click',event=>event.stopPropagation());
+        palette.querySelectorAll('[data-color]').forEach(item=>{
+            item.addEventListener('click',()=>applyThemeColor(item.dataset.color));
+        });
+        const picker=document.getElementById('customThemeColor');
+        if(picker) picker.addEventListener('input',()=>applyThemeColor(picker.value));
+        document.addEventListener('click',()=>{
+            palette.hidden=true;
+            colorBtn.setAttribute('aria-expanded','false');
+        });
+    }
+
+})();
+</script>
+</body>
+</html>

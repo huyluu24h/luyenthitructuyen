@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Xem Word gốc{% endblock %}
+{% block content %}
+
+<div class="top">
+    <div>
+        <h2>Xem Word gốc</h2>
+        <p class="muted">{{ source.source_file }}</p>
+    </div>
+
+    <div class="shuffle-actions">
+        <a class="btn"
+           href="{{ url_for('shuffle_exam_source_download',source_id=source.id) }}">
+            Tải file gốc
+        </a>
+
+        <a class="btn secondary"
+           href="{{ url_for('shuffle_exam_manager') }}">
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="card mammoth-note">
+    <b>Chế độ tham chiếu Word:</b>
+    Mammoth giúp giữ cấu trúc đoạn/bảng/ảnh tốt hơn text thuần.
+    MathType OLE không được Mammoth tự chuyển thành LaTeX; các công thức
+    MathType vẫn do parser Word cũ của hệ thống xử lý khi tạo đề online.
+</div>
+
+{% if not mammoth_available %}
+<div class="card warning-box">
+    Chưa cài Mammoth. Chạy:
+    <code>pip install mammoth</code>
+</div>
+{% elif html_content %}
+<div class="exam-word-preview">
+    {{ html_content | safe }}
+</div>
+{% else %}
+<div class="empty">
+    Không tạo được HTML preview.
+    {% if mammoth_messages %}{{ mammoth_messages }}{% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

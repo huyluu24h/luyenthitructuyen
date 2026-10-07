@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Kết quả{% endblock %}
+{% block content %}
+<div class="card center result-card">
+    <h2>{{ 'Kết quả luyện đề' if exam and exam.is_practice else 'Đã nộp bài' }}</h2>
+    <div class="score">{{ se.score }}</div>
+    <p>Điểm tự động hiện tại (Phần I–III). Phần IV cần giáo viên chấm.</p>
+    {% if exam and exam.is_practice %}
+    <div class="result-actions">
+        <a class="btn secondary" href="{{ url_for('student_practice') }}">
+            <i class="bi bi-arrow-left-circle"></i> Về Luyện đề
+        </a>
+        {% if exam.practice_source_id %}
+        <form method="post" action="{{ url_for('start_practice',source_id=exam.practice_source_id) }}">
+            <button class="btn" type="submit">
+                <i class="bi bi-arrow-repeat"></i> Luyện lại đề này
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+    <a class="btn" href="{{ url_for('student_dashboard') }}">Về danh sách bài</a>
+    {% endif %}
+</div>
+{% endblock %}

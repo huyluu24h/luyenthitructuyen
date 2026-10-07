@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block title %}Xem tất cả mã đề{% endblock %}
+{% block content %}
+
+<div class="top shuffle-preview-toolbar">
+    <div>
+        <h2>Xem tất cả mã đề</h2>
+        <p class="muted">
+            Trang này chỉ dùng dữ liệu trộn nên mở ngay sau khi bấm Đảo.
+            Word nguồn giữ MathType/OLE gốc; PDF nguồn tải Word với công thức LaTeX chuẩn để tự chuyển MathType sau.
+        </p>
+    </div>
+
+    <div class="shuffle-actions no-print">
+        <a class="btn success"
+           href="{{ url_for('shuffle_exam_all_docx',source_id=source.id) }}">
+            <i class="bi bi-file-earmark-word"></i>
+            {% set _src_name = (source.source_file or '')|lower %}
+            {{ 'Tải Word LaTeX' if (_src_name[-4:] == '.pdf' or _src_name[-4:] == '.tex') else 'Tải Word MathType' }}
+        </a>
+
+        <a class="btn success"
+           href="{{ url_for('shuffle_exam_all_preview_pdf',source_id=source.id) }}">
+            <i class="bi bi-file-earmark-pdf"></i>
+            Tải PDF LaTeX
+        </a>
+
+        <button class="btn secondary"
+                type="button"
+                onclick="toggleAllEdit()">
+            <i class="bi bi-pencil-square"></i>
+            Chỉnh sửa bản xem
+        </button>
+
+        <button class="btn secondary"
+                type="button"
+                onclick="window.print()">
+            <i class="bi bi-printer"></i>
+            In
+        </button>
+
+        <a class="btn secondary"
+           href="{{ url_for('shuffle_exam_manager') }}">
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<script>
+function toggleAllEdit(){
+    document.querySelectorAll(
+        '.all-version .stem,.all-version .blocks'
+    ).forEach(el=>{
+        const editing=el.contentEditable==='true';
+        el.contentEditable=editing?'false':'true';
+        el.classList.toggle('editable-preview',!editing);
+    });
+}
+</script>
+
+<div class="card preserve-note">
+    {% if source.source_file and source.source_file.lower().endswith('.docx') %}
+    <i class="bi bi-check-circle-fill"></i>
+    Word nguồn: thân câu, MathType/OLE và hình vẽ được giữ theo đúng định dạng của file upload; hệ thống không ép lại cỡ MathType khi xuất Word.
+    {% elif source.source_file and source.source_file.lower().endswith('.tex') %}
+    <i class="bi bi-check-circle-fill"></i>
+    LaTeX nguồn: hệ thống đọc trực tiếp cấu trúc câu, đáp án, công thức và hình; Phần I đảo câu + phương án, Phần II chỉ đảo câu, Phần III chỉ đảo câu, Phần IV đảo câu.
+    {% else %}
+    <i class="bi bi-info-circle-fill"></i>
+    PDF nguồn: nội dung được ưu tiên cắt trực tiếp từ PDF gốc để giữ công thức/hình; cỡ hiển thị được cân về chuẩn 13.5pt, không OCR lại công thức.
+    {% endif %}
+</div>
+
+{% for version in versions %}
+<section class="all-version">
+    <div class="exam-web-header">
+        <div>
+            <strong>{{ source.department or '' }}</strong><br>
+            <strong>{{ source.school or '' }}</strong>
+        </div>
+        <div class="center">
+            <strong>{{ source.exam_name or source.title }}</strong><br>
+            {% if source.school_year %}
+            <strong>NĂM HỌC {{ source.school_year }}</strong><br>
+            {% endif %}
+            {% if source.subject %}
+            <strong>MÔN: {{ source.subject }}</strong><br>
+            {% endif %}
+            <em>Thời gian: {{ source.duration_text or '90 phút' }}</em>
+        </div>
+    </div>
+
+    <div class="exam-code-banner">
+        MÃ ĐỀ {{ version.exam_code }}
+    </div>
+
+    {% set ns=namespace(last_sec=0) %}
+    {% for item in version.entries %}
+        {% if item.section != ns.last_sec %}
+            {% set ns.last_sec=item.section %}
+            <div class="shuffle-part-title">
+                {% if item.section==1 %}
+                    Phần I. Câu trắc nghiệm nhiều phương án lựa chọn
+                {% elif item.section==2 %}
+                    Phần II. Câu trắc nghiệm Đúng Sai
+                {% elif item.section==3 %}
+                    Phần III. Câu trả lời ngắn
+                {% else %}
+                    Phần IV. Tự luận
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <section class="card shuffle-question">
+            <div class="qtitle">Câu {{ item.number }}:</div>
+
+            <div class="stem">
+            {% for b in item.question.blocks %}
+                {% if b.type=='latex' %}
+                    {% if b.display=='block' %}
+                    <div class="latex-display">\[{{ b.value|math_tex }}\]</div>
+                    
+                    {% else %}
+                    <span class="latex-inline">\({{ b.value|math_tex }}\)</span>
+                    {% endif %}
+                {% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}
+                    <div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}">
+                        <img class="figure"
+                             src="{{ b.url }}"
+                             {% if b.display_width_px %}
+                             style="width:{{ b.display_width_px }}px;height:{{ b.display_height_px }}px;"
+                             {% endif %}>
+                    </div>
+                {% elif b.type=='image' %}
+                    <img class="formula v512-formula"
+                         src="{{ b.url }}"
+                         style="height:{{ b.display_height_px or 18 }}px;width:auto;">
+                {% else %}
+                    <span class="textblock">{{ b.value }}</span>
+                {% endif %}
+            {% endfor %}
+            </div>
+
+            {% if item.question.options %}
+            <div class="options">
+                {% for original_key in item.option_order %}
+                    {% for op in item.question.options %}
+                        {% if op.key==original_key %}
+                        {% set oi=item.option_order.index(original_key) %}
+                        <div class="preview-option">
+                            <b class="opt-key">
+                                {% if item.section==2 %}
+                                    {{ ['a','b','c','d'][oi] }}.
+                                {% else %}
+                                    {{ 'ABCD'[oi] }}.
+                                {% endif %}
+                            </b>
+                            <div class="blocks">
+                            {% for b in op.blocks %}
+                                {% if b.type=='latex' %}
+                                    {% if b.display=='block' %}
+                                    <div class="latex-display">\[{{ b.value|math_tex }}\]</div>
+                                    
+                                    {% else %}
+                                    <span class="latex-inline">\({{ b.value|math_tex }}\)</span>
+                                    {% endif %}
+                                {% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}
+                                    <div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}">
+                                        <img class="figure"
+                                             src="{{ b.url }}"
+                                             {% if b.display_width_px %}
+                                             style="width:{{ b.display_width_px }}px;height:{{ b.display_height_px }}px;"
+                                             {% endif %}>
+                                    </div>
+                                {% elif b.type=='image' %}
+                                    <img class="formula v512-formula"
+                                         src="{{ b.url }}"
+                                         style="height:{{ b.display_height_px or 18 }}px;width:auto;">
+                                {% else %}
+                                    <span class="textblock">{{ b.value }}</span>
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+    {% endfor %}
+</section>
+
+{% if not loop.last %}
+<div class="version-separator"></div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

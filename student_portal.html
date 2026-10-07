@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Học sinh{% endblock %}
+{% block content %}
+<div class="portal-hero">
+    <span class="eyebrow">KHU VỰC HỌC SINH</span>
+    <h1>Học sinh</h1>
+    <p>Làm bài kiểm tra do giáo viên xuất bản hoặc tự luyện từ Ngân hàng đề.</p>
+</div>
+
+{% if session.get('role')=='student' and not session.get('is_admin') %}
+<div class="portal-menu-stage">
+<div class="portal-grid portal-icon-grid student-portal-grid">
+    <a class="portal-icon-card" href="{{ url_for('student_dashboard') }}">
+        <span class="portal-icon"><i class="bi bi-clipboard2-check"></i></span>
+        <span class="portal-icon-label">Làm bài</span>
+    </a>
+    <a class="portal-icon-card" href="{{ url_for('student_practice') }}">
+        <span class="portal-icon"><i class="bi bi-journal-check"></i></span>
+        <span class="portal-icon-label">Luyện đề</span>
+    </a>
+</div>
+</div>
+{% else %}
+<div class="auth-choice-grid">
+    <article class="portal-box">
+        <h3>Đăng nhập Học sinh</h3>
+        <p>Đăng nhập để làm bài hoặc tự luyện đề.</p>
+        <a class="btn secondary" href="{{ url_for('login',role='student') }}">Đăng nhập</a>
+    </article>
+</div>
+{% endif %}
+{% endblock %}

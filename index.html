@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Trang chủ{% endblock %}
+{% block content %}
+<section class="hero-card intro-home">
+    <span class="eyebrow">GIỚI THIỆU</span>
+    {% if homepage_intro %}
+    <div class="homepage-intro-text" style="white-space:pre-line;line-height:1.7">{{ homepage_intro }}</div>
+    {% else %}
+    <div class="empty">Admin chưa đăng nội dung giới thiệu website.</div>
+    {% endif %}
+</section>
+
+<section class="home-news-section">
+    <div class="top" style="margin-bottom:12px">
+        <div>
+            <h2>Thông báo</h2>
+            <p class="muted">Nội dung do quản trị viên đăng trên Trang chủ.</p>
+        </div>
+    </div>
+    {% if news %}
+    <div class="news-grid">
+        {% for n in news %}
+        <article class="news-card">
+            {% if n.image_name %}
+            <img class="news-image" src="{{ url_for('news_media_file',filename=n.image_name) }}" alt="{{ n.title }}">
+            {% endif %}
+            {% if n.video_name %}
+            <video class="news-video" controls preload="metadata">
+                <source src="{{ url_for('news_media_file',filename=n.video_name) }}">
+            </video>
+            {% endif %}
+            <div class="news-body">
+                <h3>{{ n.title }}</h3>
+                <div class="muted">{{ n.created_at }}</div>
+                <p style="white-space:pre-line">{{ n.content }}</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><div class="empty">Admin chưa đăng thông báo mới.</div></div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Ngân hàng đề{% endblock %}
+{% block content %}
+<div class="portal-hero folder-browser-hero">
+    <span class="eyebrow">KHU VỰC GIÁO VIÊN</span>
+    <h1><i class="bi bi-collection"></i> Thư mục Ngân hàng đề</h1>
+    <p>Tạo thư mục theo lớp hoặc chủ đề, sau đó mở thư mục để upload và quản lý các đề Word/PDF/LaTeX.</p>
+</div>
+
+<div class="card bank-monitor-entry">
+    <div class="bank-monitor-entry-icon"><i class="bi bi-broadcast-pin"></i></div>
+    <div>
+        <h3>Theo dõi học sinh luyện đề</h3>
+        <p class="muted">Xem học sinh đang làm bài theo thời gian thực, điểm số, thời gian làm và số lần vi phạm.</p>
+    </div>
+    <a class="btn" href="{{ url_for('practice_monitor') }}">
+        <i class="bi bi-activity"></i> Mở bảng theo dõi
+    </a>
+</div>
+
+<div class="card folder-create-card">
+    <div><h3><i class="bi bi-folder-plus"></i> Tạo thư mục mới</h3><p class="muted">Ví dụ: Hình học 11 hoặc Ôn thi học kỳ II.</p></div>
+    <form method="post" action="{{ url_for('teacher_create_bank_folder') }}" class="folder-create-form">
+        <label class="sr-only" for="bankFolderName">Tên thư mục</label>
+        <input id="bankFolderName" name="name" maxlength="120" placeholder="Nhập tên thư mục" required>
+        <button class="btn" type="submit"><i class="bi bi-folder-plus"></i> Tạo thư mục</button>
+    </form>
+</div>
+
+{% if folders or unfiled_count %}
+<div class="portal-menu-stage folder-menu-stage"><div class="portal-grid portal-icon-grid folder-portal-grid">
+    {% for folder in folders %}
+    <a class="portal-icon-card folder-portal-card" href="{{ url_for('teacher_bank_folder',folder_id=folder.id) }}">
+        <span class="portal-icon folder-icon"><i class="bi bi-folder-fill"></i></span>
+        <span class="portal-icon-label">{{ folder.name }}</span><small>{{ folder.item_count }} đề nguồn</small>
+    </a>
+    {% endfor %}
+    {% if unfiled_count %}<a class="portal-icon-card folder-portal-card legacy-folder-card" href="{{ url_for('teacher_unfiled_bank') }}">
+        <span class="portal-icon"><i class="bi bi-archive-fill"></i></span><span class="portal-icon-label">Chưa phân loại</span><small>{{ unfiled_count }} đề cũ</small>
+    </a>{% endif %}
+</div></div>
+{% else %}<div class="empty folder-browser-empty"><h3>Chưa có thư mục Ngân hàng</h3><p>Hãy tạo thư mục đầu tiên, sau đó mở thư mục để upload đề.</p></div>{% endif %}
+{% endblock %}

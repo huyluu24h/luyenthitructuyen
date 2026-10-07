@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Chuyển PDF sang Word{% endblock %}
+{% block content %}
+<div class="utility-shell">
+    <div class="utility-heading">
+        <div class="utility-heading-icon"><i class="bi bi-file-earmark-word-fill"></i></div>
+        <div>
+            <h1>Chuyển PDF sang Word</h1>
+            <p>Tách văn bản chỉnh sửa được, công thức LaTeX và hình ảnh gốc.</p>
+        </div>
+    </div>
+
+    <section class="utility-card">
+        <form method="post" enctype="multipart/form-data">
+            <label for="pdfFile">Chọn tệp PDF</label>
+            <input class="utility-file-input" id="pdfFile" name="file"
+                   type="file" accept="application/pdf,.pdf" required>
+            <div class="utility-actions">
+                <button class="btn" type="submit">
+                    <i class="bi bi-arrow-repeat"></i> Chuyển và tải Word
+                </button>
+            </div>
+        </form>
+        <div class="utility-note">
+            <strong>Cách xử lý mới:</strong> chữ trong PDF số được đưa thành văn
+            bản Word; ký hiệu và công thức nhận diện được ghi trong
+            <code>$...$</code> dưới dạng LaTeX chuẩn; ảnh nhúng được giữ nguyên
+            dữ liệu và tỷ lệ. Với PDF chỉ gồm ảnh scan, trang ảnh vẫn được giữ
+            nguyên để không làm mất nội dung.
+        </div>
+    </section>
+</div>
+{% endblock %}

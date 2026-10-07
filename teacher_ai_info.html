@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Giáo viên AI{% endblock %}
+{% block content %}
+<div class="utility-shell">
+    <div class="utility-heading">
+        <div class="utility-heading-icon"><i class="bi bi-robot"></i></div>
+        <div>
+            <h1>Giáo viên AI</h1>
+            <p>Trợ lý chuyên môn hỗ trợ đọc đề, gợi ý và trình bày lời giải Toán.</p>
+        </div>
+    </div>
+
+    {% if teacher_access %}
+    <section class="utility-card">
+        {% if not ai_configured %}
+        <div class="utility-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Máy chủ chưa có <code>OPENAI_API_KEY</code>. Quản trị viên cần thêm
+            khóa này vào biến môi trường để trợ lý bắt đầu giải bài.
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="ai-tutor-form">
+            <div class="ai-tutor-settings">
+                <div>
+                    <label for="grade">Cấp học</label>
+                    <select id="grade" name="grade">
+                        <option value="THPT" {% if grade=='THPT' %}selected{% endif %}>THPT</option>
+                        <option value="THCS" {% if grade=='THCS' %}selected{% endif %}>THCS</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="approach">Cách hỗ trợ</label>
+                    <select id="approach" name="approach">
+                        <option value="step_by_step" {% if approach=='step_by_step' %}selected{% endif %}>Giải chi tiết từng bước</option>
+                        <option value="hint" {% if approach=='hint' %}selected{% endif %}>Chỉ gợi ý</option>
+                        <option value="short" {% if approach=='short' %}selected{% endif %}>Lời giải ngắn gọn</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="problem">Nhập đề bài</label>
+            <textarea id="problem" name="problem" rows="8"
+                      placeholder="Ví dụ: Giải phương trình x² - 5x + 6 = 0 và trình bày theo chương trình THPT.">{{ problem }}</textarea>
+
+            <label for="problemImage">Hoặc tải ảnh bài toán</label>
+            <input class="utility-file-input" id="problemImage" name="problem_image"
+                   type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+            <small class="muted">Ảnh JPG, PNG, WEBP hoặc GIF; tối đa 8 MB.</small>
+
+            <div class="utility-actions">
+                <button class="btn" type="submit" {% if not ai_configured %}disabled{% endif %}>
+                    <i class="bi bi-stars"></i> Phân tích và giải bài
+                </button>
+            </div>
+        </form>
+    </section>
+
+    {% if error %}
+    <div class="ai-tutor-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+    {% endif %}
+
+    {% if solution %}
+    <section class="utility-card ai-solution-card">
+        <div class="ai-solution-title">
+            <i class="bi bi-lightbulb-fill"></i>
+            <h2>Lời giải đề xuất</h2>
+        </div>
+        <div class="ai-solution math-output">{{ solution }}</div>
+        <p class="ai-check-note">
+            AI có thể nhầm. Giáo viên cần kiểm tra lại giả thiết, phép biến đổi
+            và kết luận trước khi sử dụng trong bài giảng.
+        </p>
+    </section>
+    {% endif %}
+
+    {% else %}
+    <section class="utility-card">
+        <p>Chức năng này dành cho tài khoản giáo viên và quản trị viên.</p>
+        <a class="btn" href="{{ url_for('login', role='teacher', next=url_for('teacher_ai_utility')) }}">
+            <i class="bi bi-box-arrow-in-right"></i> Đăng nhập giáo viên
+        </a>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

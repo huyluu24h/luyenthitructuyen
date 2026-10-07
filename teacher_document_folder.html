@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}{{ folder.name }}{% endblock %}
+{% block content %}
+<div class="folder-detail-head">
+    <a class="folder-back-link" href="{{ url_for('teacher_documents') }}"><i class="bi bi-arrow-left"></i> Tất cả thư mục</a>
+    <div class="folder-detail-title">
+        <span class="folder-detail-icon"><i class="bi bi-folder-fill"></i></span>
+        <div><span class="eyebrow">TÀI LIỆU GIÁO VIÊN</span><h1>{{ folder.name }}</h1></div>
+    </div>
+    {% if not is_unfiled %}
+    <form class="folder-rename-form" method="post"
+          action="{{ url_for('teacher_rename_document_folder',folder_id=folder.id) }}">
+        <label for="documentFolderName">Đổi tên thư mục</label>
+        <div class="folder-rename-controls">
+            <input id="documentFolderName" name="name" value="{{ folder.name }}"
+                   maxlength="120" required>
+            <button class="btn secondary" type="submit">
+                <i class="bi bi-pencil-square"></i> Lưu tên mới
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% if not is_unfiled %}
+<div class="card">
+    <h3><i class="bi bi-cloud-arrow-up"></i> Upload vào thư mục này</h3>
+    <form method="post" action="{{ url_for('teacher_documents') }}" enctype="multipart/form-data" class="registration-form">
+        <input type="hidden" name="folder_id" value="{{ folder.id }}">
+        <div><label>Tiêu đề</label><input name="title"></div>
+        <div><label>File tài liệu</label><input type="file" name="document" required></div>
+        <div class="form-full"><label>Mô tả</label><textarea name="description" rows="3"></textarea></div>
+        <div class="form-full"><button class="btn" type="submit"><i class="bi bi-upload"></i> Tải tài liệu lên</button></div>
+    </form>
+</div>
+{% else %}
+<div class="info-box">Đây là các tài liệu cũ chưa có thư mục. Tài liệu mới nên được upload trong một thư mục đã tạo.</div>
+{% endif %}
+
+<div class="card">
+    <div class="folder-list-heading"><h3>Danh sách trong thư mục</h3><span class="folder-count">{{ documents|length }} tài liệu</span></div>
+    {% if documents %}
+    <div class="table-wrap"><table class="result-table">
+        <thead><tr><th>Tiêu đề</th><th>File</th><th>Ngày tải</th><th>Thao tác</th></tr></thead>
+        <tbody>{% for d in documents %}<tr>
+            <td><strong>{{ d.title }}</strong>{% if d.description %}<br><span class="muted">{{ d.description }}</span>{% endif %}</td>
+            <td>{{ d.original_name }}</td><td>{{ d.created_at }}</td>
+            <td>
+                <a class="btn secondary" href="{{ url_for('view_document',doc_id=d.id) }}">Xem</a>
+                <a class="btn" href="{{ url_for('download_document',doc_id=d.id) }}">Tải</a>
+                <form method="post" action="{{ url_for('teacher_delete_document',doc_id=d.id) }}" style="display:inline" onsubmit="return confirm('Xóa tài liệu này?');"><button class="btn btn-danger">Xóa</button></form>
+            </td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="empty">Thư mục này chưa có tài liệu.</div>{% endif %}
+</div>
+{% endblock %}

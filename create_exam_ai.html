@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% block title %}Tạo đề bằng AI{% endblock %}
+{% block content %}
+<h2>Tạo đề bằng AI</h2>
+
+<div class="card">
+    {% if ai_configured %}
+    <p class="answer-status">
+        <i class="bi bi-cpu"></i>
+        AI đang sẵn sàng với mô hình <strong>{{ ai_model }}</strong>.
+        Kết quả sẽ được kiểm tra đủ số câu và đúng cấu trúc trước khi hiển thị.
+    </p>
+    {% else %}
+    <div class="flash">
+        Chưa cấu hình <code>OPENAI_API_KEY</code>. Quản trị viên cần thêm khóa
+        trên máy chủ trước khi sử dụng chức năng tạo đề AI.
+    </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        <label>Yêu cầu tạo đề</label>
+        <textarea name="prompt" rows="7" style="width:100%;box-sizing:border-box"
+                  placeholder="Ví dụ: Toán 12, mức độ nhận biết. Phần I 3 câu đạo hàm; Phần II 2 câu cực trị; Phần III 1 câu trả lời ngắn; Phần IV 1 câu tự luận">{{ prompt_value or '' }}</textarea>
+
+        <div class="registration-form ai-count-grid">
+            <div><label>Số câu Phần I</label><input type="number" name="count_p1" min="0" max="50" value="{{ count_values[1] if count_values else 0 }}"></div>
+            <div><label>Số câu Phần II</label><input type="number" name="count_p2" min="0" max="50" value="{{ count_values[2] if count_values else 0 }}"></div>
+            <div><label>Số câu Phần III</label><input type="number" name="count_p3" min="0" max="50" value="{{ count_values[3] if count_values else 0 }}"></div>
+            <div><label>Số câu Phần IV</label><input type="number" name="count_p4" min="0" max="50" value="{{ count_values[4] if count_values else 0 }}"></div>
+        </div>
+        <p class="muted">Nếu nhập số câu tại đây, hệ thống ưu tiên các số này thay cho việc tự đọc số lượng trong lời yêu cầu.</p>
+
+        <label>Hoặc tải ma trận đề</label>
+        <input type="file" name="matrix"
+               accept=".doc,.docx,.pdf,.xls,.xlsx,.png,.jpg,.jpeg">
+
+        <button class="btn" type="submit" {% if not ai_configured %}disabled{% endif %}>
+            <i class="bi bi-stars"></i> Tạo đúng theo yêu cầu
+        </button>
+    </form>
+</div>
+
+{% if draft %}
+<form method="post" action="{{ url_for('publish_ai_draft') }}" id="aiDraftForm">
+
+<div class="card">
+    <h3>Đề AI đã tạo</h3>
+    <p class="muted">
+        Công thức được hiển thị trực tiếp dưới dạng toán học.
+        Giáo viên có thể xóa câu, tạo thêm câu rồi xuất bản.
+    </p>
+
+    <div class="registration-form">
+        <div><label>Tên đề</label><input name="title" value="Đề tạo bằng AI" required></div>
+        <div><label>Thời gian (phút)</label><input name="duration" type="number" value="90" min="1"></div>
+
+        <div><label>Điểm Phần I</label><input name="p1" value="{{ default_points[1] }}"></div>
+        <div><label>Điểm Phần II</label><input name="p2" value="{{ default_points[2] }}"></div>
+        <div><label>Điểm Phần III</label><input name="p3" value="{{ default_points[3] }}"></div>
+        <div><label>Điểm Phần IV</label><input name="p4" value="{{ default_points[4] }}"></div>
+
+        <div>
+            <label>Chấm Phần II</label>
+            <select name="p2_mode">
+                <option value="1">PA1: mỗi ý đúng 0,25</option>
+                <option value="2">PA2: 1/2/3/4 ý = 0,1/0,25/0,5/1</option>
+            </select>
+        </div>
+
+        <div>
+            <label><input type="checkbox" name="anti_cheat" checked> Bật chống gian lận</label>
+            <input type="number" name="max_violations" value="3" min="1">
+        </div>
+    </div>
+
+    <input type="hidden" name="questions_json" id="questions_json">
+</div>
+
+<div id="aiQuestionList"></div>
+
+<div class="card manual-actions">
+    <button type="button" class="btn secondary" onclick="addAIQuestion()">
+        + Tạo thêm câu
+    </button>
+    <button type="submit" class="btn success">
+        Xuất bản cho học sinh
+    </button>
+</div>
+</form>
+
+<template id="aiQuestionTemplate">
+<section class="card ai-question-card">
+    <div class="ai-section-heading"></div>
+    <div class="manual-question-head">
+        <strong class="ai-q-number"></strong>
+        <button type="button" class="btn btn-danger ai-remove">Xóa câu</button>
+    </div>
+
+    <div class="ai-rendered-view">
+        <div class="ai-rendered-stem"></div>
+        <div class="ai-rendered-options"></div>
+        <div class="answer-status ai-rendered-answer"></div>
+    </div>
+
+    <details class="ai-edit-details">
+        <summary>Chỉnh sửa câu này</summary>
+        <div class="registration-form">
+            <div>
+                <label>Phần</label>
+                <select class="ai-section">
+                    <option value="1">Phần I - Nhiều lựa chọn</option>
+                    <option value="2">Phần II - Đúng/Sai</option>
+                    <option value="3">Phần III - Trả lời ngắn</option>
+                    <option value="4">Phần IV - Tự luận</option>
+                </select>
+            </div>
+
+            <div class="form-full">
+                <label>Nội dung câu hỏi</label>
+                <textarea class="ai-stem" rows="4"></textarea>
+            </div>
+
+            <div class="ai-options form-full">
+                <div class="manual-option-grid">
+                    <label class="ai-op-label ai-op-label-a">
+                        <span class="ai-op-prefix">A.</span>
+                        <textarea class="ai-op-a" rows="2"></textarea>
+                    </label>
+                    <label class="ai-op-label ai-op-label-b">
+                        <span class="ai-op-prefix">B.</span>
+                        <textarea class="ai-op-b" rows="2"></textarea>
+                    </label>
+                    <label class="ai-op-label ai-op-label-c">
+                        <span class="ai-op-prefix">C.</span>
+                        <textarea class="ai-op-c" rows="2"></textarea>
+                    </label>
+                    <label class="ai-op-label ai-op-label-d">
+                        <span class="ai-op-prefix">D.</span>
+                        <textarea class="ai-op-d" rows="2"></textarea>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-full">
+                <label>Đáp án</label>
+                <input class="ai-answer">
+            </div>
+        </div>
+    </details>
+</section>
+</template>
+
+<script>
+const initialAI={{ draft.questions|tojson }};
+const aiList=document.getElementById('aiQuestionList');
+const aiTpl=document.getElementById('aiQuestionTemplate');
+
+function sectionTitle(sec){
+    return sec===1?'Phần I. Trắc nghiệm nhiều lựa chọn':
+           sec===2?'Phần II. Câu trắc nghiệm đúng sai':
+           sec===3?'Phần III. Câu trả lời ngắn':
+                   'Phần IV. Câu tự luận';
+}
+
+function sectionUI(card){
+    const sec=Number(card.querySelector('.ai-section').value);
+    const opts=card.querySelector('.ai-options');
+    const ans=card.querySelector('.ai-answer');
+
+    opts.style.display=(sec===1||sec===2)?'':'none';
+
+    // ========================================================
+    // V5.21.9 — NHÃN PHƯƠNG ÁN/Ý THEO ĐÚNG TỪNG PHẦN
+    // Phần I  : A. B. C. D.
+    // Phần II : a) b) c) d)
+    // ========================================================
+    const prefixes = sec===2
+        ? ['a)','b)','c)','d)']
+        : ['A.','B.','C.','D.'];
+
+    card.querySelectorAll('.ai-op-prefix').forEach((el,i)=>{
+        el.textContent=prefixes[i];
+    });
+
+    ans.placeholder=sec===1?'A/B/C/D':
+                    sec===2?'Ví dụ: ĐSĐS':
+                    sec===3?'Ví dụ: -1,25':
+                            'Giáo viên chấm';
+}
+
+function renderCard(card){
+    const sec=Number(card.querySelector('.ai-section').value);
+    const stem=card.querySelector('.ai-stem').value;
+    const answer=card.querySelector('.ai-answer').value;
+
+    const stemBox=card.querySelector('.ai-rendered-stem');
+    stemBox.textContent=stem;
+    stemBox.classList.add('ai-math-text');
+
+    const box=card.querySelector('.ai-rendered-options');
+    box.innerHTML='';
+
+    if(sec===1||sec===2){
+        // Phần I: A. B. C. D.
+        // Phần II: a) b) c) d)
+        const labels = sec===2
+            ? ['a)','b)','c)','d)']
+            : ['A.','B.','C.','D.'];
+
+        const vals=['a','b','c','d'].map(
+            k=>card.querySelector('.ai-op-'+k).value
+        );
+
+        vals.forEach((v,i)=>{
+            const row=document.createElement('div');
+            row.className='ai-rendered-option';
+            const label=document.createElement('b');
+            label.textContent=labels[i]+' ';
+            const value=document.createElement('span');
+            value.textContent=v;
+            row.append(label,value);
+            box.appendChild(row);
+        });
+    }
+
+    const answerBox=card.querySelector('.ai-rendered-answer');
+    answerBox.textContent=sec===4
+        ? 'Chấm điểm: Giáo viên chấm'
+        : 'Đáp án: '+answer;
+
+    if(window.MathJax&&MathJax.typesetPromise){
+        MathJax.typesetClear([card]);
+        MathJax.typesetPromise([card]);
+    }
+}
+
+function renumberAI(){
+    const counters={1:0,2:0,3:0,4:0};
+    const seen={1:false,2:false,3:false,4:false};
+
+    [...aiList.querySelectorAll('.ai-question-card')].forEach(card=>{
+        const sec=Number(card.querySelector('.ai-section').value);
+        counters[sec]++;
+
+        const heading=card.querySelector('.ai-section-heading');
+        if(!seen[sec]){
+            heading.textContent=sectionTitle(sec);
+            heading.style.display='block';
+            seen[sec]=true;
+        }else{
+            heading.textContent='';
+            heading.style.display='none';
+        }
+
+        card.querySelector('.ai-q-number').textContent='Câu '+counters[sec];
+    });
+}
+
+function bindLive(card){
+    card.querySelectorAll('textarea,input,select').forEach(el=>{
+        el.addEventListener('input',()=>{sectionUI(card);renderCard(card);renumberAI();});
+        el.addEventListener('change',()=>{sectionUI(card);renderCard(card);renumberAI();});
+    });
+}
+
+function addAIQuestion(data=null){
+    aiList.appendChild(aiTpl.content.cloneNode(true));
+    const card=aiList.lastElementChild;
+
+    if(data){
+        card.querySelector('.ai-section').value=data.section||1;
+        card.querySelector('.ai-stem').value=data.stem||'';
+        const ops=data.options||[];
+        ['a','b','c','d'].forEach((k,i)=>card.querySelector('.ai-op-'+k).value=ops[i]||'');
+        card.querySelector('.ai-answer').value=data.answer||'';
+    }else{
+        card.querySelector('.ai-section').value=1;
+        card.querySelector('.ai-stem').value='Nhập nội dung câu hỏi mới. Có thể dùng công thức \\(x^2+1\\).';
+        card.querySelector('.ai-answer').value='A';
+    }
+
+    card.querySelector('.ai-remove').onclick=()=>{card.remove();renumberAI();};
+    bindLive(card);
+    sectionUI(card);
+    renderCard(card);
+    renumberAI();
+}
+
+function collectAI(){
+    return [...aiList.querySelectorAll('.ai-question-card')].map(card=>({
+        section:Number(card.querySelector('.ai-section').value),
+        stem:card.querySelector('.ai-stem').value,
+        options:[
+            card.querySelector('.ai-op-a').value,
+            card.querySelector('.ai-op-b').value,
+            card.querySelector('.ai-op-c').value,
+            card.querySelector('.ai-op-d').value
+        ].filter(v=>v.trim()!==''),
+        answer:card.querySelector('.ai-answer').value
+    }));
+}
+
+document.getElementById('aiDraftForm').addEventListener('submit',e=>{
+    const qs=collectAI();
+    if(!qs.length){
+        e.preventDefault();
+        alert('Hãy tạo ít nhất một câu hỏi.');
+        return;
+    }
+
+    for(const q of qs){
+        if(q.section===1&&q.options.length!==4){
+            e.preventDefault(); alert('Mỗi câu Phần I phải có đúng 4 phương án.'); return;
+        }
+        if(q.section===2&&q.options.length!==4){
+            e.preventDefault(); alert('Mỗi câu Phần II phải có đúng 4 ý a/b/c/d.'); return;
+        }
+        if(q.section===3&&!/^-?\d+(,\d+)?$/.test((q.answer||'').trim())){
+            e.preventDefault(); alert('Đáp án Phần III chỉ dùng chữ số, dấu - và dấu phẩy.'); return;
+        }
+    }
+
+    document.getElementById('questions_json').value=JSON.stringify(qs);
+});
+
+initialAI.forEach(q=>addAIQuestion(q));
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% macro solution_panel(blocks) -%}
+{% if blocks %}
+<details class="solution-details">
+    <summary>
+        <i class="bi bi-journal-check"></i>
+        Lời giải chi tiết
+    </summary>
+    <div class="solution-content">
+    {% for b in blocks %}
+        {% if b.type=='break' %}
+            <div class="solution-break" aria-hidden="true"></div>
+        {% elif b.type=='latex' %}
+            {% if b.display=='block' %}
+                <div class="latex-display">\[{{ b.value|math_tex }}\]</div>
+            {% else %}
+                <span class="latex-inline">\({{ b.value|math_tex }}\)</span>
+            {% endif %}
+        {% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}
+            <div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}">
+                <img class="figure" src="{{ b.url }}"
+                     {% if b.display_width_px %}
+                     style="width:{{b.display_width_px}}px;height:{{b.display_height_px}}px;"
+                     {% endif %}
+                     alt="Hình trong lời giải">
+            </div>
+        {% elif b.type=='image' %}
+            <img class="formula" src="{{ b.url }}"
+                 style="height:{{b.display_height_px or 25}}px;width:auto;"
+                 alt="Công thức trong lời giải">
+        {% elif b.type=='text' %}
+            <span class="textblock">{{ b.value }}</span>
+        {% endif %}
+    {% endfor %}
+    </div>
+</details>
+{% endif %}
+{%- endmacro %}

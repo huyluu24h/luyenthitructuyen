@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block title %}Quản trị hệ thống{% endblock %}
+{% block content %}
+<div class="portal-hero">
+    <span class="eyebrow">QUẢN TRỊ VIÊN</span>
+    <h1>Phân quyền & Đăng bài</h1>
+    <p>Duyệt/phân quyền thành viên và đăng nội dung, thông báo, ảnh hoặc video lên Trang chủ.</p>
+</div>
+
+
+<div class="card">
+    <h3>Đăng tin tức lên Trang chủ</h3>
+    <form method="post"
+          action="{{ url_for('admin_create_news') }}"
+          enctype="multipart/form-data"
+          class="registration-form">
+
+        <div>
+            <label>Tiêu đề *</label>
+            <input name="title" required>
+        </div>
+
+        <div>
+            <label>Ảnh</label>
+            <input type="file"
+                   name="image"
+                   accept=".jpg,.jpeg,.png,.webp,.gif,image/*">
+        </div>
+
+        <div class="form-full">
+            <label>Nội dung *</label>
+            <textarea name="content"
+                      rows="6"
+                      required></textarea>
+        </div>
+
+        <div>
+            <label>Video</label>
+            <input type="file"
+                   name="video"
+                   accept=".mp4,.webm,.ogg,.mov,video/*">
+        </div>
+
+        <div class="form-full">
+            <button class="btn success" type="submit">
+                Đăng tin
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Tin tức đã đăng</h3>
+
+    {% if news %}
+    <div class="news-admin-list">
+        {% for n in news %}
+        <div class="news-admin-row">
+            <div>
+                <strong>{{ n.title }}</strong>
+                <div class="muted">{{ n.created_at }}</div>
+            </div>
+
+            <form method="post"
+                  action="{{ url_for('admin_delete_news',news_id=n.id) }}"
+                  onsubmit="return confirm('Xóa tin tức này?');">
+                <button class="btn btn-danger">Xóa tin</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">Chưa có tin tức.</div>
+    {% endif %}
+</div>
+
+
+
+<div class="card">
+    <h3>Giới thiệu website trên Trang chủ</h3>
+    <form method="post" action="{{ url_for('admin_update_site_intro') }}">
+        <textarea name="homepage_intro"
+                  rows="7"
+                  style="width:100%;box-sizing:border-box"
+                  required>{{ homepage_intro }}</textarea>
+        <button class="btn success" type="submit">Lưu giới thiệu</button>
+    </form>
+    <p class="muted">
+        Nội dung này sẽ xuất hiện đầu tiên khi người dùng truy cập website.
+    </p>
+</div>
+
+<div class="top">
+    <div>
+        <h2>Quản trị thành viên</h2>
+        <p class="muted">Duyệt đăng ký và quản lý tài khoản đã được chấp nhận.</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Yêu cầu đăng ký</h3>
+
+    {% if requests %}
+    <div class="table-wrap">
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Vai trò</th>
+                    <th>Tài khoản</th>
+                    <th>Mã HS</th>
+                    <th>Liên hệ</th>
+                    <th>Trạng thái</th>
+                    <th>Duyệt thành viên</th>
+                    <th>Quản lý</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in requests %}
+                <tr>
+                    <td>{{ r.full_name }}</td>
+                    <td>{{ 'Giáo viên' if r.requested_role=='teacher' else 'Học sinh' }}</td>
+                    <td>{{ r.username }}</td>
+                    <td>{{ r.student_code or '' }}</td>
+                    <td>
+                        {{ r.email or '' }}
+                        {% if r.phone %}<br>{{ r.phone }}{% endif %}
+                    </td>
+                    <td>
+                        {% if r.status=='pending' %}
+                            <span class="status-draft">Chờ duyệt</span>
+                        {% elif r.status=='approved' %}
+                            <span class="status-published">Đã duyệt</span>
+                        {% else %}
+                            <span class="status-rejected">Đã từ chối</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-actions">
+                        {% if r.status=='pending' %}
+                        <form method="post"
+                              action="{{ url_for('admin_approve_request',req_id=r.id) }}">
+                            <button class="btn success">Duyệt</button>
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('admin_reject_request',req_id=r.id) }}">
+                            <button class="btn secondary">Từ chối</button>
+                        </form>
+                        {% elif r.status=='approved' %}
+                            <span class="status-published">Đã duyệt</span>
+                        {% else %}
+                            <span class="status-rejected">Đã từ chối</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post"
+                              action="{{ url_for('admin_delete_request',req_id=r.id) }}"
+                              onsubmit="return confirm('Xóa yêu cầu đăng ký này?');">
+                            <button class="btn btn-danger">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty">Chưa có yêu cầu đăng ký.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Thành viên đã có tài khoản</h3>
+    <div class="table-wrap">
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Tài khoản</th>
+                    <th>Vai trò</th>
+                    <th>Mã HS</th>
+                    <th>Duyệt thành viên</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in members %}
+                <tr>
+                    <td>{{ u.full_name }}</td>
+                    <td>{{ u.username }}</td>
+                    <td>
+                        {% if u.is_admin %}
+                            Admin
+                        {% elif u.role=='teacher' %}
+                            Giáo viên
+                        {% else %}
+                            Học sinh
+                        {% endif %}
+                    </td>
+                    <td>{{ u.student_code or '' }}</td>
+                    <td>
+                        {% if u.is_admin %}
+                            <span class="status-published">Admin</span>
+                        {% elif u.role=='student' and u.student_code %}
+                            <span class="status-published">Excel / Tự động</span>
+                        {% else %}
+                            <span class="status-published">Đã duyệt</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not u.is_admin %}
+                        <form method="post"
+                              action="{{ url_for('admin_delete_member',user_id=u.id) }}"
+                              onsubmit="return confirm('Bạn có chắc muốn xóa thành viên này?');">
+                            <button class="btn btn-danger">
+                                Xóa thành viên
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="muted">Tài khoản quản trị</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card"><h3>Quản lý chủ sở hữu đề cũ</h3>
+<p>Đề từ bản trước có thể không lưu ID giáo viên. Kiểm tra chủ sở hữu và giao lại đề bằng tay nếu cần.</p>
+<table><tr><th>Mã</th><th>Tên đề</th><th>Đang thuộc</th><th>Giao cho giáo viên</th></tr>
+{% for ex in all_exams %}<tr><td>{{ ex.id }}</td><td>{{ ex.title }}</td><td>{{ ex.owner_name or 'Chưa xác định' }}</td>
+<td><form method="post" action="{{ url_for('admin_transfer_exam',exam_id=ex.id) }}">
+<select name="teacher_id" required>{% for teacher in teachers %}<option value="{{ teacher.id }}" {% if teacher.id==ex.teacher_id %}selected{% endif %}>{{ teacher.full_name }} ({{ teacher.username }})</option>{% endfor %}</select>
+<button class="btn secondary">Giao đề</button></form></td></tr>{% endfor %}
+</table></div>
+{% endblock %}

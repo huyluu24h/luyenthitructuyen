@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Tài liệu học tập{% endblock %}
+{% block content %}
+<div class="portal-hero folder-browser-hero">
+    <span class="eyebrow">KHU VỰC HỌC SINH</span>
+    <h1><i class="bi bi-book"></i> Tài liệu học tập</h1>
+    <p>Chọn thư mục để xem danh sách tài liệu giáo viên đã chia sẻ.</p>
+</div>
+{% if folders or unfiled_count %}
+<div class="portal-menu-stage folder-menu-stage"><div class="portal-grid portal-icon-grid folder-portal-grid">
+    {% for folder in folders %}
+    <a class="portal-icon-card folder-portal-card" href="{{ url_for('student_document_folder',folder_id=folder.id) }}">
+        <span class="portal-icon folder-icon"><i class="bi bi-folder-fill"></i></span>
+        <span class="portal-icon-label">{{ folder.name }}</span>
+        <small>{{ folder.item_count }} tài liệu · {{ folder.teacher_name }}</small>
+    </a>
+    {% endfor %}
+    {% if unfiled_count %}<a class="portal-icon-card folder-portal-card legacy-folder-card" href="{{ url_for('student_unfiled_documents') }}">
+        <span class="portal-icon"><i class="bi bi-archive-fill"></i></span><span class="portal-icon-label">Chưa phân loại</span><small>{{ unfiled_count }} tài liệu</small>
+    </a>{% endif %}
+</div></div>
+{% else %}<div class="empty"><h3>Hiện chưa có thư mục tài liệu</h3><p>Khi giáo viên tạo thư mục, thư mục sẽ tự động xuất hiện tại đây.</p></div>{% endif %}
+{% endblock %}

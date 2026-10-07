@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Học sinh{% endblock %}
+{% block content %}
+<h2>Bài kiểm tra của tôi</h2>
+
+{% if exams %}
+<div class="grid">
+    {% for e in exams %}
+    <div class="card">
+        <h3>{{ e.title }}</h3>
+        <p>{{ e.question_count }} câu · 10 điểm · {{ e.duration_minutes }} phút</p>
+        <p>
+            Phần I {{ e.part1_points }} ·
+            II {{ e.part2_points }} ·
+            III {{ e.part3_points }} ·
+            IV {{ e.part4_points }}
+        </p>
+
+        <!-- Học sinh chỉ được làm đề đang tồn tại và đã xuất bản -->
+        <a class="btn" href="{{ url_for('take_exam', exam_id=e.id) }}">Làm bài</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <h3>Hiện chưa có đề thi</h3>
+    <p>Giáo viên cần xuất bản đề trước.</p>
+</div>
+{% endif %}
+{% endblock %}

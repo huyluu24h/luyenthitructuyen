@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ folder.name }}{% endblock %}
+{% block content %}
+<div class="folder-detail-head">
+    <a class="folder-back-link" href="{{ url_for('student_practice') }}"><i class="bi bi-arrow-left"></i> Tất cả thư mục</a>
+    <div class="folder-detail-title"><span class="folder-detail-icon"><i class="bi bi-folder-fill"></i></span>
+        <div><span class="eyebrow">LUYỆN ĐỀ</span><h1>{{ folder.name }}</h1>{% if folder.teacher_name %}<p class="muted">Giáo viên: {{ folder.teacher_name }}</p>{% endif %}</div>
+    </div>
+</div>
+{% if sources %}<div class="practice-source-list">
+    {% for source in sources %}<article class="practice-source-card">
+        <div class="practice-source-main">
+            <h4>{{ source.title }}</h4><p class="muted"><i class="bi bi-person-badge"></i> {{ source.teacher_name }} · {{ source.question_count }} câu</p>
+            {% if source.attempt_count %}<p class="practice-history">Đã luyện {{ source.attempt_count }} lần · Điểm gần nhất: <strong>{{ source.last_score|round(2) }}/10</strong></p>
+            {% else %}<p class="practice-history muted">Chưa làm đề này.</p>{% endif %}
+        </div>
+        {% if source.question_count %}<form method="post" action="{{ url_for('start_practice',source_id=source.id) }}">
+            <button class="btn" type="submit"><i class="bi bi-play-circle-fill"></i> {{ 'Luyện lại' if source.attempt_count else 'Làm đề' }}</button>
+        </form>{% else %}<button class="btn secondary" type="button" disabled>Chưa có câu hỏi</button>{% endif %}
+    </article>{% endfor %}
+</div>{% else %}<div class="empty">Thư mục này chưa có đề luyện tập.</div>{% endif %}
+{% endblock %}

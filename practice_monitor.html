@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Theo dõi luyện đề{% endblock %}
+{% block content %}
+<div class="folder-detail-head practice-monitor-head">
+    <a class="folder-back-link" href="{{ url_for('question_bank') }}">
+        <i class="bi bi-arrow-left"></i> Trở về Ngân hàng
+    </a>
+    <div class="folder-detail-title">
+        <span class="folder-detail-icon practice-monitor-icon"><i class="bi bi-broadcast-pin"></i></span>
+        <div>
+            <span class="eyebrow">NGÂN HÀNG ĐỀ</span>
+            <h1>Theo dõi học sinh luyện đề</h1>
+            <p class="muted">Dữ liệu tự cập nhật mỗi 5 giây · Cập nhật lúc <span id="monitorUpdatedAt">{{ monitor_data.updated_at }}</span></p>
+        </div>
+    </div>
+</div>
+
+<div class="practice-summary-grid" aria-label="Tổng quan luyện đề">
+    <article class="practice-summary-card live"><i class="bi bi-activity"></i><span>Đang luyện</span><strong id="summaryActive">{{ monitor_data.summary.active_count }}</strong></article>
+    <article class="practice-summary-card"><i class="bi bi-people-fill"></i><span>Học sinh đã tham gia</span><strong id="summaryStudents">{{ monitor_data.summary.student_count }}</strong></article>
+    <article class="practice-summary-card"><i class="bi bi-check2-circle"></i><span>Lượt đã nộp</span><strong id="summaryCompleted">{{ monitor_data.summary.completed_count }}</strong></article>
+    <article class="practice-summary-card"><i class="bi bi-bar-chart-fill"></i><span>Điểm trung bình</span><strong id="summaryAverage">{{ '%.2f'|format(monitor_data.summary.average_score) }}</strong></article>
+    <article class="practice-summary-card warning"><i class="bi bi-exclamation-triangle-fill"></i><span>Tổng vi phạm</span><strong id="summaryViolations">{{ monitor_data.summary.total_violations }}</strong></article>
+</div>
+
+<section class="card practice-monitor-section">
+    <div class="practice-monitor-title">
+        <div><h3><span class="live-dot"></span> Đang luyện theo thời gian thực</h3><p class="muted">Một lượt được xem là đang hoạt động khi trang làm bài còn kết nối trong 35 giây gần nhất.</p></div>
+        <span class="monitor-refresh-label"><i class="bi bi-arrow-repeat"></i> Tự động cập nhật</span>
+    </div>
+    <div class="table-wrap">
+        <table class="practice-monitor-table">
+            <thead><tr><th>Học sinh</th><th>Đề luyện</th><th>Lớp / thư mục</th><th>Tiến độ</th><th>Thời gian</th><th>Vi phạm</th><th>Trạng thái</th></tr></thead>
+            <tbody id="activePracticeRows"></tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card practice-monitor-section">
+    <div class="practice-monitor-title">
+        <div><h3><i class="bi bi-clock-history"></i> Thống kê các lượt luyện đề</h3><p class="muted">Bao gồm lượt đang làm, tạm ngắt và đã nộp.</p></div>
+        <a class="btn success" href="{{ url_for('practice_monitor_export_xlsx') }}">
+            <i class="bi bi-file-earmark-excel"></i> Tải danh sách học sinh luyện đề
+        </a>
+    </div>
+    <div class="table-wrap">
+        <table class="practice-monitor-table">
+            <thead><tr><th>Học sinh</th><th>Đề luyện</th><th>Lớp / thư mục</th><th>Bắt đầu</th><th>Thời gian làm</th><th>Điểm</th><th>Vi phạm</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody id="allPracticeRows"></tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+(function(){
+    const endpoint={{ monitor_api|tojson }};
+    const deleteTemplate={{ url_for('delete_practice_attempt',attempt_id=0)|tojson }};
+    const initial={{ monitor_data|tojson }};
+
+    function cell(row,value,className){
+        const td=document.createElement('td');
+        td.textContent=value;
+        if(className) td.className=className;
+        row.appendChild(td);
+    }
+    function studentLabel(item){
+        const details=[item.student_code,item.class_name].filter(Boolean).join(' · ');
+        return item.student_name+(details?'\n'+details:'');
+    }
+    function practiceFolderLabel(item){
+        const grade=item.practice_grade||'Chưa phân loại';
+        const folder=item.folder_name||'';
+        return folder&&folder!==grade?grade+'\n'+folder:grade;
+    }
+    function statusCell(row,item){
+        const td=document.createElement('td');
+        const badge=document.createElement('span');
+        badge.className='practice-status '+(item.is_live?'live':(item.status==='Đã nộp'?'done':'paused'));
+        badge.textContent=item.status;
+        td.appendChild(badge);
+        row.appendChild(td);
+    }
+    function emptyRow(body,columns,message){
+        const row=document.createElement('tr');
+        const td=document.createElement('td');
+        td.colSpan=columns;
+        td.className='practice-empty-cell';
+        td.textContent=message;
+        row.appendChild(td);
+        body.appendChild(row);
+    }
+    function deleteCell(row,item){
+        const td=document.createElement('td');
+        const button=document.createElement('button');
+        button.type='button';
+        button.className='btn btn-danger practice-delete-button';
+        button.innerHTML='<i class="bi bi-trash"></i> Xóa';
+        if(item.is_live){
+            button.disabled=true;
+            button.title='Không xóa khi học sinh đang luyện đề';
+        }else{
+            button.addEventListener('click',async()=>{
+                if(!confirm('Xóa lượt luyện này? Tài khoản học sinh vẫn được giữ nguyên.')) return;
+                button.disabled=true;
+                try{
+                    const url=deleteTemplate.replace(/\/0\/delete$/, '/'+item.attempt_id+'/delete');
+                    const response=await fetch(url,{
+                        method:'POST',
+                        headers:{'Accept':'application/json'}
+                    });
+                    const result=await response.json();
+                    if(!response.ok||!result.ok){
+                        alert(result.error||'Không thể xóa lượt luyện.');
+                        button.disabled=false;
+                        return;
+                    }
+                    render(result.monitor);
+                }catch(error){
+                    alert('Không thể kết nối máy chủ để xóa lượt luyện.');
+                    button.disabled=false;
+                }
+            });
+        }
+        td.appendChild(button);
+        row.appendChild(td);
+    }
+    function render(data){
+        document.getElementById('summaryActive').textContent=data.summary.active_count;
+        document.getElementById('summaryStudents').textContent=data.summary.student_count;
+        document.getElementById('summaryCompleted').textContent=data.summary.completed_count;
+        document.getElementById('summaryAverage').textContent=Number(data.summary.average_score||0).toFixed(2);
+        document.getElementById('summaryViolations').textContent=data.summary.total_violations;
+        document.getElementById('monitorUpdatedAt').textContent=data.updated_at;
+
+        const active=document.getElementById('activePracticeRows');
+        active.replaceChildren();
+        data.active.forEach(item=>{
+            const row=document.createElement('tr');
+            cell(row,studentLabel(item),'student-monitor-name');
+            cell(row,item.source_title);
+            cell(row,practiceFolderLabel(item),'student-monitor-name');
+            cell(row,item.answered_count+'/'+item.question_count+' câu');
+            cell(row,item.duration,'number-cell');
+            cell(row,String(item.violations),'number-cell');
+            statusCell(row,item);
+            active.appendChild(row);
+        });
+        if(!data.active.length) emptyRow(active,7,'Hiện chưa có học sinh đang luyện đề.');
+
+        const all=document.getElementById('allPracticeRows');
+        all.replaceChildren();
+        data.attempts.forEach(item=>{
+            const row=document.createElement('tr');
+            cell(row,studentLabel(item),'student-monitor-name');
+            cell(row,item.source_title);
+            cell(row,practiceFolderLabel(item),'student-monitor-name');
+            cell(row,item.started_at);
+            cell(row,item.duration,'number-cell');
+            cell(row,item.score===null?'—':Number(item.score).toFixed(2),'number-cell');
+            cell(row,String(item.violations),'number-cell');
+            statusCell(row,item);
+            deleteCell(row,item);
+            all.appendChild(row);
+        });
+        if(!data.attempts.length) emptyRow(all,9,'Chưa có lượt luyện đề nào.');
+    }
+
+    async function refresh(){
+        try{
+            const response=await fetch(endpoint,{headers:{'Accept':'application/json'},cache:'no-store'});
+            if(response.ok) render(await response.json());
+        }catch(error){}
+    }
+    render(initial);
+    window.setInterval(refresh,5000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Đăng nhập{% endblock %}
+{% block content %}
+<div class="card narrow auth-card">
+    <h2>
+        {% if request.args.get('role')=='teacher' %}
+            Đăng nhập Giáo viên
+        {% elif request.args.get('role')=='student' %}
+            Đăng nhập Học sinh
+        {% elif request.args.get('role')=='admin' %}
+            Đăng nhập Quản trị
+        {% else %}
+            Đăng nhập
+        {% endif %}
+    </h2>
+
+    <form method="post">
+        {% if request.args.get('next') %}
+        <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+        {% endif %}
+        {% if request.args.get('role') %}
+        <input type="hidden" name="role" value="{{ request.args.get('role') }}">
+        {% endif %}
+        <label>Tài khoản / Mã học sinh</label>
+        <input name="username"
+               required
+               autocomplete="username"
+               inputmode="text">
+
+        <label>Mật khẩu</label>
+        <input type="password"
+               name="password"
+               required
+               autocomplete="current-password">
+
+        <button class="btn">Đăng nhập</button>
+    </form>
+
+    {% if request.args.get('role')=='student' %}
+    <div class="info-box">
+        Nếu giáo viên đã tải danh sách Excel có Mã học sinh,
+        học sinh ưu tiên đăng nhập bằng <strong>Mã học sinh</strong>
+        cho cả tài khoản và mật khẩu.
+    </div>
+    {% endif %}
+
+    {% if request.args.get('role') in ('teacher','student') %}
+    <p class="muted">
+        Chưa có tài khoản?
+        <a href="{{ url_for('register_account',role=request.args.get('role')) }}">
+            Đăng ký tại đây
+        </a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% from '_solution_macros.html' import solution_panel %}
+{% block title %}{{ source.title }}{% endblock %}
+{% block content %}
+
+<a class="folder-back-link"
+   href="{{ url_for('teacher_bank_folder',folder_id=source.folder_id) if source.folder_id else url_for('teacher_unfiled_bank') }}">
+    <i class="bi bi-arrow-left"></i> Trở về thư mục
+</a>
+
+<div class="top">
+    <div>
+        <h2>{{ source.title }}</h2>
+        <p class="muted">Chọn câu → Tạo đề từ câu đã chọn → Xuất bản cho học sinh.</p>
+    </div>
+</div>
+
+<div class="card bank-3step-card">
+    <h3>Tạo đề từ Ngân hàng</h3>
+    <div class="bank-3steps">
+        <div class="bank-3step active">
+            <span class="bank-step-num">1</span>
+            <div>
+                <b>Bước 1 — Chọn câu</b>
+                <small>Đánh dấu các câu muốn đưa vào đề</small>
+            </div>
+        </div>
+
+        <div class="bank-3step wait">
+            <span class="bank-step-num">2</span>
+            <div>
+                <b>Bước 2 — Tạo đề</b>
+                <small>Hiển thị ngay đề từ các câu đã chọn</small>
+            </div>
+        </div>
+
+        <div class="bank-3step wait">
+            <span class="bank-step-num">3</span>
+            <div>
+                <b>Bước 3 — Xuất bản</b>
+                <small>Cho học sinh làm bài kiểm tra</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post"
+      id="bankBuildForm"
+      action="{{ url_for('build_exam_from_bank',source_id=source.id) }}">
+
+    <div class="card bank-build-settings">
+        <h3>Thông tin đề mới</h3>
+
+        <div class="registration-form">
+            <div>
+                <label>Tên đề</label>
+                <input name="title" required value="Đề kiểm tra từ {{ source.title }}">
+            </div>
+            <div>
+                <label>Thời gian làm bài (phút)</label>
+                <input type="number" name="duration" value="90" min="1">
+            </div>
+            <div><label>Điểm Phần I</label><input name="p1" value="2"></div>
+            <div><label>Điểm Phần II</label><input name="p2" value="2"></div>
+            <div><label>Điểm Phần III</label><input name="p3" value="3"></div>
+            <div><label>Điểm Phần IV</label><input name="p4" value="3"></div>
+            <div class="bank-point-note">
+                <b>Lưu ý:</b>
+                Phần II được chấm tối đa 1 điểm cho mỗi câu.
+                Khi tạo đề, hệ thống sẽ tự cân điểm theo số câu đã chọn
+                để không làm gián đoạn Bước 2.
+            </div>
+
+            <div>
+                <label>Chấm Phần II</label>
+                <select name="p2_mode">
+                    <option value="1">PA1: mỗi ý đúng 0,25 điểm</option>
+                    <option value="2">PA2: 1/2/3/4 ý = 0,1/0,25/0,5/1 điểm</option>
+                </select>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" name="anti_cheat" checked>
+                    Bật chống gian lận
+                </label>
+                <input type="number" name="max_violations" value="3" min="1">
+            </div>
+        </div>
+
+        <button class="btn success" type="submit">
+            <i class="bi bi-file-earmark-plus"></i>
+            Bước 2 — Tạo đề từ các câu đã chọn
+        </button>
+    </div>
+
+    <div class="bank-select-toolbar">
+        <h3 class="bank-select-heading">Bước 1 — Chọn các câu cần tạo đề</h3>
+        <button class="btn secondary" id="toggleAllBankQuestions" type="button">
+            <i class="bi bi-check2-square"></i>
+            <span>Chọn tất cả</span>
+        </button>
+        <span class="bank-selected-count" id="bankSelectedCount">Đã chọn 0/{{ questions|length }} câu</span>
+    </div>
+
+    {% set ns={'sec':0} %}
+    {% for q in questions %}
+        {% if q.section != ns.sec %}
+            {% set _=ns.update({'sec':q.section}) %}
+            <div class="part-card">
+                <div class="part-title">
+                    {{['',
+                    'Phần I. Trắc nghiệm nhiều lựa chọn',
+                    'Phần II. Câu trắc nghiệm đúng sai',
+                    'Phần III. Câu trả lời ngắn',
+                    'Phần IV. Câu tự luận'][q.section]}}
+                </div>
+            </div>
+        {% endif %}
+
+        <section class="card bank-question-card">
+            <label class="bank-select">
+                <input type="checkbox" name="question_ids" value="{{ q.id }}">
+                <strong>Chọn Câu {{ q.section_order }}</strong>
+            </label>
+
+            <div class="stem">
+            {% for b in q.blocks %}
+                {% if b.type=='latex' %}
+                    {% if b.display=='block' %}
+                        <div class="latex-display">\[{{ b.value|math_tex }}\]</div>
+                        
+                    {% else %}
+                        <span class="latex-inline">\({{ b.value|math_tex }}\)</span>
+                    {% endif %}
+                {% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}
+                    <div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}">
+                        <img class="figure" src="{{ b.url }}"
+                             {% if b.display_width_px %}
+                             style="width:{{b.display_width_px}}px;height:{{b.display_height_px}}px;"
+                             {% endif %}>
+                    </div>
+                {% elif b.type=='image' %}
+                    <img class="formula" src="{{ b.url }}"
+                         style="height:{{b.display_height_px or 25}}px;width:auto;">
+                {% else %}
+                    <span class="textblock">{{ b.value }}</span>
+                {% endif %}
+            {% endfor %}
+            </div>
+
+            {% if q.options %}
+            <div class="options">
+                {% for o in q.options %}
+                <div class="preview-option">
+                    <b class="opt-key">
+                        {% if q.section==2 %}
+                            {{ ['a','b','c','d'][loop.index0] }}.
+                        {% else %}
+                            {{ 'ABCD'[loop.index0] }}.
+                        {% endif %}
+                    </b>
+                    <div class="blocks">
+                    {% for b in o.blocks %}
+                        {% if b.type=='latex' %}
+                            {% if b.display=='block' %}
+                                <div class="latex-display">\[{{ b.value|math_tex }}\]</div>
+                                
+                            {% else %}
+                                <span class="latex-inline">\({{ b.value|math_tex }}\)</span>
+                            {% endif %}
+                        {% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}
+                            <div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}">
+                                <img class="figure" src="{{ b.url }}"{% if b.display_width_px and b.display_height_px %} style="width:{{ b.display_width_px }}px;height:{{ b.display_height_px }}px;"{% endif %}>
+                            </div>
+                        {% elif b.type=='image' %}
+                            <img class="formula" src="{{ b.url }}"
+                                 style="height:{{b.display_height_px or 25}}px;width:auto;">
+                        {% else %}
+                            <span class="textblock">{{ b.value }}</span>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="answer-status">
+                <b>Đáp án:</b> {{ q.answer_text }}
+            </div>
+            {{ solution_panel(q.solution) }}
+        </section>
+    {% else %}
+        <div class="empty">Ngân hàng này chưa có câu hỏi.</div>
+    {% endfor %}
+
+    {% if questions %}
+    <div class="bank-bottom-create">
+        <button class="btn success" type="submit">
+            <i class="bi bi-file-earmark-plus"></i>
+            Bước 2 — Tạo đề từ các câu đã chọn
+        </button>
+    </div>
+    {% endif %}
+</form>
+
+<script>
+(function(){
+    const button=document.getElementById('toggleAllBankQuestions');
+    const count=document.getElementById('bankSelectedCount');
+    const boxes=Array.from(document.querySelectorAll(
+        '#bankBuildForm input[name="question_ids"]'
+    ));
+    if(!button||!count||!boxes.length) return;
+    function refresh(){
+        const selected=boxes.filter(box=>box.checked).length;
+        count.textContent='Đã chọn '+selected+'/'+boxes.length+' câu';
+        const all=selected===boxes.length;
+        button.querySelector('span').textContent=all?'Bỏ chọn tất cả':'Chọn tất cả';
+        button.querySelector('i').className=all?'bi bi-square':'bi bi-check2-square';
+    }
+    button.addEventListener('click',()=>{
+        const all=boxes.every(box=>box.checked);
+        boxes.forEach(box=>{box.checked=!all;});
+        refresh();
+    });
+    boxes.forEach(box=>box.addEventListener('change',refresh));
+    refresh();
+})();
+</script>
+
+{% endblock %}

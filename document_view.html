@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Xem tài liệu{% endblock %}
+{% block content %}
+<div class="top">
+    <div>
+        <a class="folder-back-link" href="javascript:history.back()">
+            <i class="bi bi-arrow-left"></i> Trở về danh sách tài liệu
+        </a>
+        <h2>{{ doc.title }}</h2>
+        <p class="muted">{{ doc.original_name }}</p>
+    </div>
+    <a class="btn"
+       href="{{ url_for('download_document',doc_id=doc.id) }}">
+        Tải xuống
+    </a>
+</div>
+
+<div class="card document-view-card">
+{% if preview_kind=='pdf' %}
+    <iframe class="document-pdf-frame"
+            src="{{ preview_url }}"
+            title="{{ doc.title }}"></iframe>
+
+{% elif preview_kind=='image' %}
+    <div class="document-image-wrap">
+        <img src="{{ preview_url }}"
+             alt="{{ doc.title }}"
+             class="document-preview-image">
+    </div>
+
+{% elif preview_kind=='text' %}
+    <pre class="document-text-preview">{{ text_content }}</pre>
+
+{% else %}
+    <div class="empty">
+        <h3>Chưa xem trực tiếp được tài liệu này</h3>
+        <p>{{ preview_error }}</p>
+        <a class="btn"
+           href="{{ url_for('download_document',doc_id=doc.id) }}">
+            Tải tài liệu về
+        </a>
+    </div>
+{% endif %}
+</div>
+{% endblock %}

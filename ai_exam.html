@@ -1,0 +1,146 @@
+{% extends 'base.html' %}{% block body_class %}exam-focus-mode{% endblock %}{% block title %}{{exam.title}}{% endblock %}{% block content %}
+<div class="exam-head exam-mobile-toolbar">
+  <button type="button" class="btn secondary exam-back-btn" onclick="goBackFromExam()">← Trở lại</button>
+  <div class="exam-student-identity"><span class="exam-mobile-label">Họ tên:</span> <b>{{session.get('full_name')}}</b></div>
+  <div class="exam-time-box"><span class="exam-mobile-label">Thời gian:</span> <b id="timer">{{'%02d'|format(exam.duration_minutes)}}:00</b></div>
+  <button class="btn danger exam-submit-btn" onclick="submitExam()">Nộp bài</button>
+</div>
+<div class="exam-desktop-title"><h2>{{exam.title}}</h2><p>Đề được tạo cố định cho tài khoản <b>{{session.get('full_name')}}</b>.</p></div>
+<div id="warning" class="flash" style="display:none"></div>
+<div class="student-layout"><aside class="card question-nav"><h3>Danh sách câu</h3><div class="question-nav-grid">{% for q in questions %}<a href="#q-{{q.id}}" class="question-link" data-target="q-{{q.id}}">{{['','I','II','III','IV'][q.section]}}.{{q.section_order}}</a>{% endfor %}</div><div class="exam-meta">Học sinh: <b>{{session.get('full_name')}}</b><br>Vi phạm: <b id="violations">{{student_exam.violations}}</b></div></aside>
+<main style="margin:0;padding:0;max-width:none"><div id="exam">
+{% set ns={'sec':0} %}{% for q in questions %}
+{% if q.section!=ns.sec %}{% set _=ns.update({'sec':q.section}) %}<div class="part-card"><div class="part-title">{{['','Phần I. Trắc nghiệm nhiều lựa chọn','Phần II. Câu trắc nghiệm đúng sai','Phần III. Câu trả lời ngắn','Phần IV. Câu tự luận'][q.section]}}</div><div class="muted part-points">Điểm phần: {{[0,exam.part1_points,exam.part2_points,exam.part3_points,exam.part4_points][q.section]}}</div></div>{% endif %}
+<section id="q-{{q.id}}" class="card exam-question" data-qid="{{q.id}}" data-type="{{q.qtype}}"><div class="student-question-header">Câu {{q.section_order}}</div>
+<div class="stem">{% for b in q.blocks %}{% if b.type=='latex' %}
+{% if b.display=='block' %}
+<div class="latex-display">\[{{b.value|math_tex}}\]</div>
+
+{% else %}
+<span class="latex-inline">\({{b.value|math_tex}}\)</span>
+{% endif %}
+{% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}<div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}"><img class="figure" src="{{b.url}}"{% if b.display_width_px %} style="width:{{b.display_width_px}}px;height:{{b.display_height_px}}px;"{% endif %} alt="Hình câu hỏi"></div>{% elif b.type=='image' %}<img class="formula" src="{{b.url}}" style="height:{{b.display_height_px or 25}}px;width:auto;" alt="Công thức">{% else %}<span class="textblock">{{b.value}}</span>{% endif %}{% endfor %}</div>
+{% if q.qtype=='mcq' %}<div class="options">{% for o in q.options %}<button type="button" class="answer {% if q.selected==o.key %}selected{% endif %}" data-key="{{o.key}}"><span class="choice-label">{{'ABCD'[loop.index0]}}</span><span class="blocks">{% for b in o.blocks %}{% if b.type=='latex' %}
+{% if b.display=='block' %}
+<div class="latex-display">\[{{b.value|math_tex}}\]</div>
+
+{% else %}
+<span class="latex-inline">\({{b.value|math_tex}}\)</span>
+{% endif %}
+{% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}<div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}"><img class="figure" src="{{b.url}}"{% if b.display_width_px %} style="width:{{b.display_width_px}}px;height:{{b.display_height_px}}px;"{% endif %}></div>{% elif b.type=='image' %}<img class="formula" src="{{b.url}}" style="height:{{b.display_height_px or 25}}px;width:auto;">{% else %}<span class="textblock">{{b.value}}</span>{% endif %}{% endfor %}</span></button>{% endfor %}</div>
+{% elif q.qtype=='tf' %}<div class="tf-list">{% for o in q.options %}<div class="tf-row"><div class="tf-statement"><b>{{ ['a)','b)','c)','d)'][loop.index0] }}</b><span class="blocks">{% for b in o.blocks %}{% if b.type=='latex' %}
+{% if b.display=='block' %}
+<div class="latex-display">\[{{b.value|math_tex}}\]</div>
+
+{% else %}
+<span class="latex-inline">\({{b.value|math_tex}}\)</span>
+{% endif %}
+{% elif b.type=='table' %}
+                <div class="latex-table-wrap">
+                    <table class="latex-web-table"><tbody>
+                    {% for row in b.rows %}<tr>
+                        {% for cell in row %}<td>
+                            {% for cb in cell %}
+                                {% if cb.type=='latex' %}
+                                    {% if cb.display=='block' %}<span class="latex-display">\[{{ cb.value|math_tex }}\]</span>{% else %}<span class="latex-inline">\({{ cb.value|math_tex }}\)</span>{% endif %}
+                                {% elif cb.type=='image' %}
+                                    <img src="{{ cb.url }}" style="height:{{cb.display_height_px or 25}}px;width:auto;" alt="">
+                                {% else %}<span class="textblock">{{ cb.value }}</span>{% endif %}
+                            {% endfor %}
+                        </td>{% endfor %}
+                    </tr>{% endfor %}
+                    </tbody></table>
+                </div>
+            {% elif b.type=='image' and b.role=='figure' %}<div class="figure-wrap{% if b.slot %} {{ b.slot }}{% endif %}"><img class="figure" src="{{b.url}}"{% if b.display_width_px %} style="width:{{b.display_width_px}}px;height:{{b.display_height_px}}px;"{% endif %}></div>{% elif b.type=='image' %}<img class="formula" src="{{b.url}}" style="height:{{b.display_height_px or 25}}px;width:auto;">{% else %}<span class="textblock">{{b.value}}</span>{% endif %}{% endfor %}</span></div><select class="tf-choice" data-key="{{o.key}}"><option value="">Chọn</option><option value="true">Đúng</option><option value="false">Sai</option></select></div>{% endfor %}</div><button class="btn" onclick="saveTF(this)">Lưu câu</button>
+{% elif q.qtype=='short' %}<div class="short-help">Chỉ được nhập các ký tự: <b>0–9, dấu - và dấu ,</b>. Ví dụ: <code>-1,25</code></div><input class="short-input" inputmode="decimal" autocomplete="off" maxlength="30" pattern="[-0-9,]+" value="{{q.selected or ''}}" placeholder="Nhập kết quả, ví dụ -1,25"><button class="btn" onclick="saveShort(this)">Lưu câu</button>
+{% else %}<textarea class="essay-input" rows="10" placeholder="Trình bày lời giải...">{{q.selected or ''}}</textarea><button class="btn" onclick="saveEssay(this)">Lưu bài tự luận</button>{% endif %}
+</section>{% endfor %}</div></main></div>
+<script>
+const SEID={{student_exam.id}}, anti={{1 if exam.anti_cheat else 0}}, maxV={{exam.max_violations}}, isPractice={{1 if exam.is_practice else 0}}, deadline=new Date('{{student_exam.started_at}}Z').getTime()+{{exam.duration_minutes}}*60000;
+async function sendPracticeHeartbeat(){
+    if(!isPractice||submitting) return;
+    try{await fetch('/student/exam/'+SEID+'/heartbeat',{method:'POST',keepalive:true});}catch(e){}
+}
+let pendingEvents=[];async function sendEvent(event,details=''){if(!anti)return Promise.resolve();const job=(async()=>{try{const r=await fetch('/student/exam/'+SEID+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event,details}),keepalive:true});const d=await r.json();if(d.violations!==undefined)document.getElementById('violations').textContent=d.violations;if(d.force_submit){alert('Bài làm đã tự động nộp do vượt số lần vi phạm cho phép.');setTimeout(()=>submitExam(true),0)}}catch(e){}})();pendingEvents.push(job);job.finally(()=>{pendingEvents=pendingEvents.filter(x=>x!==job)});return job}
+function updateTimer(){let s=Math.max(0,Math.floor((deadline-Date.now())/1000));document.getElementById('timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(s<=0)submitExam(true)}setInterval(updateTimer,1000);updateTimer();
+document.querySelectorAll('.answer').forEach(btn=>btn.onclick=async()=>{const sec=btn.closest('.exam-question');sec.querySelectorAll('.answer').forEach(x=>x.classList.remove('selected'));btn.classList.add('selected');await fetch('/student/exam/'+SEID+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:sec.dataset.qid,answer:btn.dataset.key})})});
+async function saveTF(btn){const sec=btn.closest('.exam-question'),a={};sec.querySelectorAll('.tf-choice').forEach(x=>{a[x.dataset.key]=x.value==='true'});if(Object.values(a).length<sec.querySelectorAll('.tf-choice').length){alert('Hãy chọn Đúng hoặc Sai cho tất cả các ý.');return}await fetch('/student/exam/'+SEID+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:sec.dataset.qid,answer:a})})}
+function validShort(v){return /^[-0-9,]+$/.test(v)&&v.length>0}
+async function saveShort(btn){const sec=btn.closest('.exam-question'),v=sec.querySelector('.short-input').value.trim();if(!validShort(v)){alert('Phần trả lời ngắn chỉ cho phép chữ số, dấu - và dấu ,');return}await fetch('/student/exam/'+SEID+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:sec.dataset.qid,answer:v})})}
+async function saveEssay(btn){const sec=btn.closest('.exam-question');await fetch('/student/exam/'+SEID+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:sec.dataset.qid,answer:sec.querySelector('.essay-input').value})})}
+let submitting=false, intentionalExit=false;
+function goBackFromExam(){
+    intentionalExit=true;
+    if(window.history.length>1){ window.history.back(); }
+    else { window.location.href="/student"; }
+}
+if(isPractice){sendPracticeHeartbeat();setInterval(sendPracticeHeartbeat,10000);}
+async function submitExam(force=false){if(submitting)return;if(!force&&!confirm('Bạn chắc chắn muốn nộp bài?'))return;submitting=true;try{await Promise.allSettled(pendingEvents);const r=await fetch('/student/exam/'+SEID+'/submit',{method:'POST',keepalive:true});const d=await r.json();if(!d.ok){submitting=false;alert(d.error||'Không thể nộp bài.');return}location.href='/student/result/'+SEID}catch(e){submitting=false;alert('Không thể kết nối máy chủ để nộp bài. Vui lòng thử lại.')}}
+// V5.11.6 — chỉ tính vi phạm khi rời MÀN HÌNH BÀI THI trước khi nộp.
+let awayFromExam=false;
+function leaveExamScreen(reason){
+    if(submitting || !anti || awayFromExam) return;
+    awayFromExam=true;
+    sendEvent('leave_exam_screen',reason);
+}
+function backToExamScreen(){
+    if(!document.hidden && document.hasFocus()) awayFromExam=false;
+}
+document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) leaveExamScreen('Rời màn hình bài thi/chuyển sang ứng dụng hoặc tab khác');
+    else backToExamScreen();
+});
+window.addEventListener('blur',()=>leaveExamScreen('Rời cửa sổ bài thi'));
+window.addEventListener('focus',backToExamScreen);
+window.addEventListener('beforeunload',e=>{
+    if(!submitting && !intentionalExit){
+        e.preventDefault();
+        e.returnValue='Bạn đang làm bài. Rời màn hình trước khi nộp sẽ được ghi nhận vi phạm.';
+    }
+});
+window.addEventListener('pagehide',()=>{
+    if(!submitting && !intentionalExit && anti && !awayFromExam){
+        const blob=new Blob(
+            [JSON.stringify({event:'leave_exam_screen',details:'Đóng/rời trang làm bài khi chưa nộp'})],
+            {type:'application/json'}
+        );
+        navigator.sendBeacon('/student/exam/'+SEID+'/event',blob);
+        awayFromExam=true;
+    }
+});
+// Không tính copy/cut/paste/chuột phải/F12/fullscreen là vi phạm.
+// Các thao tác này cũng không ảnh hưởng việc nộp bài.
+
+</script>{% endblock %}
